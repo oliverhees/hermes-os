@@ -41,28 +41,23 @@ RUN pnpm add -D tsx
 
 # ─── runtime stage ────────────────────────────────────────────────────────
 FROM node:22-slim AS runtime
-# python3 is required by scripts/pty-helper.py (terminal feature). Originally
-# added in PR #185 for issue #161; regressed by the 2026-05-01 rename commit
-# efcb7d14 and re-added here per issue #259.
+# python3 is required by scripts/pty-helper.py (terminal feature).
+# gosu allows dropping from root to workspace after reading secrets.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl tini python3 \
+      ca-certificates curl tini python3 gosu \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -r workspace && useradd -r -g workspace -u 10010 workspace
 
 WORKDIR /app
 
 # Copy build artefacts + runtime deps.
-# server-entry.js is the Node HTTP server that wraps the TanStack Start fetch
-# handler exported by dist/server/server.js. Without it, `node dist/server/server.js`
-# imports the handler module, runs top-level code, and exits (code 0) because
-# nothing keeps the event loop alive — see issue #129.
 COPY --from=build --chown=workspace:workspace /app/dist ./dist
 COPY --from=build --chown=workspace:workspace /app/node_modules ./node_modules
 COPY --from=build --chown=workspace:workspace /app/package.json ./package.json
 COPY --from=build --chown=workspace:workspace /app/server-entry.js ./server-entry.js
 COPY --from=build --chown=workspace:workspace /app/skills ./skills
+COPY --from=build --chown=workspace:workspace /app/src ./src
 
-USER workspace
 ENV NODE_ENV=production \
     PORT=3000 \
     HOST=0.0.0.0 \
