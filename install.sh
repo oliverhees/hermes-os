@@ -560,7 +560,7 @@ build_stack() {
 
     info "Building (attempt $attempt/$max_retries)..."
 
-    if docker compose build --pull always --progress=plain >> "$LOG_FILE" 2>&1; then
+    if docker compose build --progress=plain >> "$LOG_FILE" 2>&1; then
       ok "Build complete."
       return 0
     else
