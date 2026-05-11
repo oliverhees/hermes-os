@@ -549,13 +549,32 @@ build_stack() {
   info "This pulls Postgres, Caddy, the socket-proxy, hermes-agent, and builds the hermes-os image."
   info "First run takes 3-8 minutes depending on bandwidth."
 
+  info "Pre-pulling node:22-slim base image..."
+  local max_pull_retries=5
+  local pull_ok=0
+  for ((p=1; p<=max_pull_retries; p++)); do
+    if [[ $p -gt 1 ]]; then
+      info "Retrying pull ($p/$max_pull_retries) in 15 seconds..."
+      sleep 15
+    fi
+    if docker pull node:22-slim >> "$LOG_FILE" 2>&1; then
+      pull_ok=1
+      break
+    else
+      warn "Pull attempt $p failed."
+    fi
+  done
+  if [[ $pull_ok -eq 0 ]]; then
+    warn "Could not pre-pull node:22-slim — proceeding with build anyway."
+  fi
+
   local max_retries=3
   local attempt=1
 
   while [[ $attempt -le $max_retries ]]; do
     if [[ $attempt -gt 1 ]]; then
-      info "Retry $attempt/$max_retries in 10 seconds (Docker Hub rate limit may be temporary)..."
-      sleep 10
+      info "Retry $attempt/$max_retries in 15 seconds..."
+      sleep 15
     fi
 
     info "Building (attempt $attempt/$max_retries)..."
@@ -564,7 +583,6 @@ build_stack() {
       ok "Build complete."
       return 0
     else
-      local exit_code=$?
       if [[ $attempt -eq $max_retries ]]; then
         err "Build failed after $max_retries attempts."
         tail -30 "$LOG_FILE" | sed 's/^/    /'
