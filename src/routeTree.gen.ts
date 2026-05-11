@@ -16,6 +16,7 @@ import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as Swarm2RouteImport } from './routes/swarm2'
 import { Route as SwarmRouteImport } from './routes/swarm'
 import { Route as SkillsRouteImport } from './routes/skills'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReserveRouteImport } from './routes/reserve'
 import { Route as ProfilesRouteImport } from './routes/profiles'
@@ -23,6 +24,7 @@ import { Route as PlaygroundRouteImport } from './routes/playground'
 import { Route as OperationsRouteImport } from './routes/operations'
 import { Route as MemoryRouteImport } from './routes/memory'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as HermesWorldRouteImport } from './routes/hermes-world'
 import { Route as FilesRouteImport } from './routes/files'
@@ -36,6 +38,7 @@ import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as ChatIndexRouteImport } from './routes/chat/index'
 import { Route as SettingsProvidersRouteImport } from './routes/settings/providers'
 import { Route as ReserveConfirmRouteImport } from './routes/reserve/confirm'
+import { Route as Login2faRouteImport } from './routes/login/2fa'
 import { Route as ChatSessionKeyRouteImport } from './routes/chat/$sessionKey'
 import { Route as ApiWorkspaceRouteImport } from './routes/api/workspace'
 import { Route as ApiVtCapitalRouteImport } from './routes/api/vt-capital'
@@ -188,6 +191,11 @@ const SkillsRoute = SkillsRouteImport.update({
   path: '/skills',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -221,6 +229,11 @@ const MemoryRoute = MemoryRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JobsRoute = JobsRouteImport.update({
@@ -287,6 +300,11 @@ const ReserveConfirmRoute = ReserveConfirmRouteImport.update({
   id: '/confirm',
   path: '/confirm',
   getParentRoute: () => ReserveRoute,
+} as any)
+const Login2faRoute = Login2faRouteImport.update({
+  id: '/2fa',
+  path: '/2fa',
+  getParentRoute: () => LoginRoute,
 } as any)
 const ChatSessionKeyRoute = ChatSessionKeyRouteImport.update({
   id: '/chat/$sessionKey',
@@ -884,6 +902,7 @@ export interface FileRoutesByFullPath {
   '/files': typeof FilesRoute
   '/hermes-world': typeof HermesWorldRoute
   '/jobs': typeof JobsRoute
+  '/login': typeof LoginRouteWithChildren
   '/mcp': typeof McpRoute
   '/memory': typeof MemoryRoute
   '/operations': typeof OperationsRoute
@@ -891,6 +910,7 @@ export interface FileRoutesByFullPath {
   '/profiles': typeof ProfilesRoute
   '/reserve': typeof ReserveRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/setup': typeof SetupRoute
   '/skills': typeof SkillsRoute
   '/swarm': typeof SwarmRoute
   '/swarm2': typeof Swarm2Route
@@ -967,6 +987,7 @@ export interface FileRoutesByFullPath {
   '/api/vt-capital': typeof ApiVtCapitalRoute
   '/api/workspace': typeof ApiWorkspaceRoute
   '/chat/$sessionKey': typeof ChatSessionKeyRoute
+  '/login/2fa': typeof Login2faRoute
   '/reserve/confirm': typeof ReserveConfirmRoute
   '/settings/providers': typeof SettingsProvidersRoute
   '/chat/': typeof ChatIndexRoute
@@ -1029,12 +1050,14 @@ export interface FileRoutesByTo {
   '/files': typeof FilesRoute
   '/hermes-world': typeof HermesWorldRoute
   '/jobs': typeof JobsRoute
+  '/login': typeof LoginRouteWithChildren
   '/mcp': typeof McpRoute
   '/memory': typeof MemoryRoute
   '/operations': typeof OperationsRoute
   '/playground': typeof PlaygroundRoute
   '/profiles': typeof ProfilesRoute
   '/reserve': typeof ReserveRouteWithChildren
+  '/setup': typeof SetupRoute
   '/skills': typeof SkillsRoute
   '/swarm': typeof SwarmRoute
   '/swarm2': typeof Swarm2Route
@@ -1111,6 +1134,7 @@ export interface FileRoutesByTo {
   '/api/vt-capital': typeof ApiVtCapitalRoute
   '/api/workspace': typeof ApiWorkspaceRoute
   '/chat/$sessionKey': typeof ChatSessionKeyRoute
+  '/login/2fa': typeof Login2faRoute
   '/reserve/confirm': typeof ReserveConfirmRoute
   '/settings/providers': typeof SettingsProvidersRoute
   '/chat': typeof ChatIndexRoute
@@ -1174,6 +1198,7 @@ export interface FileRoutesById {
   '/files': typeof FilesRoute
   '/hermes-world': typeof HermesWorldRoute
   '/jobs': typeof JobsRoute
+  '/login': typeof LoginRouteWithChildren
   '/mcp': typeof McpRoute
   '/memory': typeof MemoryRoute
   '/operations': typeof OperationsRoute
@@ -1181,6 +1206,7 @@ export interface FileRoutesById {
   '/profiles': typeof ProfilesRoute
   '/reserve': typeof ReserveRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/setup': typeof SetupRoute
   '/skills': typeof SkillsRoute
   '/swarm': typeof SwarmRoute
   '/swarm2': typeof Swarm2Route
@@ -1257,6 +1283,7 @@ export interface FileRoutesById {
   '/api/vt-capital': typeof ApiVtCapitalRoute
   '/api/workspace': typeof ApiWorkspaceRoute
   '/chat/$sessionKey': typeof ChatSessionKeyRoute
+  '/login/2fa': typeof Login2faRoute
   '/reserve/confirm': typeof ReserveConfirmRoute
   '/settings/providers': typeof SettingsProvidersRoute
   '/chat/': typeof ChatIndexRoute
@@ -1321,6 +1348,7 @@ export interface FileRouteTypes {
     | '/files'
     | '/hermes-world'
     | '/jobs'
+    | '/login'
     | '/mcp'
     | '/memory'
     | '/operations'
@@ -1328,6 +1356,7 @@ export interface FileRouteTypes {
     | '/profiles'
     | '/reserve'
     | '/settings'
+    | '/setup'
     | '/skills'
     | '/swarm'
     | '/swarm2'
@@ -1404,6 +1433,7 @@ export interface FileRouteTypes {
     | '/api/vt-capital'
     | '/api/workspace'
     | '/chat/$sessionKey'
+    | '/login/2fa'
     | '/reserve/confirm'
     | '/settings/providers'
     | '/chat/'
@@ -1466,12 +1496,14 @@ export interface FileRouteTypes {
     | '/files'
     | '/hermes-world'
     | '/jobs'
+    | '/login'
     | '/mcp'
     | '/memory'
     | '/operations'
     | '/playground'
     | '/profiles'
     | '/reserve'
+    | '/setup'
     | '/skills'
     | '/swarm'
     | '/swarm2'
@@ -1548,6 +1580,7 @@ export interface FileRouteTypes {
     | '/api/vt-capital'
     | '/api/workspace'
     | '/chat/$sessionKey'
+    | '/login/2fa'
     | '/reserve/confirm'
     | '/settings/providers'
     | '/chat'
@@ -1610,6 +1643,7 @@ export interface FileRouteTypes {
     | '/files'
     | '/hermes-world'
     | '/jobs'
+    | '/login'
     | '/mcp'
     | '/memory'
     | '/operations'
@@ -1617,6 +1651,7 @@ export interface FileRouteTypes {
     | '/profiles'
     | '/reserve'
     | '/settings'
+    | '/setup'
     | '/skills'
     | '/swarm'
     | '/swarm2'
@@ -1693,6 +1728,7 @@ export interface FileRouteTypes {
     | '/api/vt-capital'
     | '/api/workspace'
     | '/chat/$sessionKey'
+    | '/login/2fa'
     | '/reserve/confirm'
     | '/settings/providers'
     | '/chat/'
@@ -1756,6 +1792,7 @@ export interface RootRouteChildren {
   FilesRoute: typeof FilesRoute
   HermesWorldRoute: typeof HermesWorldRoute
   JobsRoute: typeof JobsRoute
+  LoginRoute: typeof LoginRouteWithChildren
   McpRoute: typeof McpRoute
   MemoryRoute: typeof MemoryRoute
   OperationsRoute: typeof OperationsRoute
@@ -1763,6 +1800,7 @@ export interface RootRouteChildren {
   ProfilesRoute: typeof ProfilesRoute
   ReserveRoute: typeof ReserveRouteWithChildren
   SettingsRoute: typeof SettingsRouteWithChildren
+  SetupRoute: typeof SetupRoute
   SkillsRoute: typeof SkillsRoute
   SwarmRoute: typeof SwarmRoute
   Swarm2Route: typeof Swarm2Route
@@ -1915,6 +1953,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SkillsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -1962,6 +2007,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/jobs': {
@@ -2054,6 +2106,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reserve/confirm'
       preLoaderRoute: typeof ReserveConfirmRouteImport
       parentRoute: typeof ReserveRoute
+    }
+    '/login/2fa': {
+      id: '/login/2fa'
+      path: '/2fa'
+      fullPath: '/login/2fa'
+      preLoaderRoute: typeof Login2faRouteImport
+      parentRoute: typeof LoginRoute
     }
     '/chat/$sessionKey': {
       id: '/chat/$sessionKey'
@@ -2870,6 +2929,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface LoginRouteChildren {
+  Login2faRoute: typeof Login2faRoute
+}
+
+const LoginRouteChildren: LoginRouteChildren = {
+  Login2faRoute: Login2faRoute,
+}
+
+const LoginRouteWithChildren = LoginRoute._addFileChildren(LoginRouteChildren)
+
 interface ReserveRouteChildren {
   ReserveConfirmRoute: typeof ReserveConfirmRoute
 }
@@ -3066,6 +3135,7 @@ const rootRouteChildren: RootRouteChildren = {
   FilesRoute: FilesRoute,
   HermesWorldRoute: HermesWorldRoute,
   JobsRoute: JobsRoute,
+  LoginRoute: LoginRouteWithChildren,
   McpRoute: McpRoute,
   MemoryRoute: MemoryRoute,
   OperationsRoute: OperationsRoute,
@@ -3073,6 +3143,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfilesRoute: ProfilesRoute,
   ReserveRoute: ReserveRouteWithChildren,
   SettingsRoute: SettingsRouteWithChildren,
+  SetupRoute: SetupRoute,
   SkillsRoute: SkillsRoute,
   SwarmRoute: SwarmRoute,
   Swarm2Route: Swarm2Route,

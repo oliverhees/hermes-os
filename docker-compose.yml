@@ -64,6 +64,7 @@ services:
     secrets: [pg_password]
     volumes:
       - pg_data:/var/lib/postgresql/data
+    command: postgres -c ssl=off
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U hermes_os -d hermes_os"]
       interval: 5s
@@ -138,8 +139,10 @@ services:
       DOCKER_HOST: tcp://socket-proxy:2375
       PUBLIC_IP: ${PUBLIC_IP}
       DOMAIN: ${DOMAIN}
+      BETTER_AUTH_URL: https://${DOMAIN:-hermesos.paione.de}
       PG_PASSWORD_FILE: /run/secrets/pg_password
       ENCRYPTION_KEY_FILE: /run/secrets/encryption_key
+      PGSSLMODE: disable
     secrets:
       - pg_password
       - encryption_key
@@ -149,6 +152,7 @@ services:
       - -c
       - |
         export DATABASE_URL="postgresql://hermes_os:$$(cat /run/secrets/pg_password)@postgres:5432/hermes_os"
+        export PGSSLMODE=disable
         export ENCRYPTION_KEY="$$(cat /run/secrets/encryption_key)"
         export BETTER_AUTH_SECRET="$$(cat /run/secrets/better_auth_secret)"
         exec /usr/bin/tini -- gosu workspace node --max-old-space-size=2048 server-entry.cjs
