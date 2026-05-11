@@ -79,6 +79,13 @@ router.post('/finalize', async (req, res) => {
   res.json({ ok: true, redirect: '/' })
 })
 
+router.get('/bootstrap', (_req, res) => {
+  res.json({
+    domain: process.env.DOMAIN ?? null,
+    publicIp: process.env.PUBLIC_IP ?? null,
+  })
+})
+
 router.get('/status', async (_req, res) => {
   const domain = await getSystemConfig<string>('domain')
   const provider = await getSystemConfig('llm_provider')
