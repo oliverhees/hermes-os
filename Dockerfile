@@ -36,6 +36,7 @@ COPY drizzle.config.ts ./
 COPY drizzle ./drizzle
 COPY scripts ./scripts
 COPY tsconfig.json ./
+COPY src ./src
 RUN pnpm add -D tsx
 
 # ─── runtime stage ────────────────────────────────────────────────────────
