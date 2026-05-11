@@ -541,6 +541,9 @@ PUBLIC_IP=${PUBLIC_IP}
 # Domain — used by Caddy for TLS and by the app for trusted origins
 DOMAIN=${DOMAIN}
 
+# Better Auth base URL — used for auth callbacks and redirects
+BETTER_AUTH_URL=https://${DOMAIN}
+
 # Node environment
 NODE_ENV=production
 EOF
