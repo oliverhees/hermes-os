@@ -27,8 +27,7 @@ RUN pnpm build
 
 # Bundle server-entry.js (ESM/TypeScript) to plain CommonJS so Node can run it directly
 RUN pnpm exec esbuild server-entry.js --bundle --platform=node --format=cjs --outfile=server-entry.cjs \
-    --external:dotenv/config --external:express --external:better-auth/node \
-    --banner:js="import { createRequire } from 'module';const require=createRequire(import.meta.url);"
+    --external:dotenv/config --external:express --external:better-auth/node
 
 # ─── migrator stage ─────────────────────────────────────────────────────
 FROM node:22-slim AS migrator
