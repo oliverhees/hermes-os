@@ -67,8 +67,10 @@ export const auth = betterAuth({
   },
 
   trustedOrigins: async () => {
-    const domain = await getSystemConfig<string>('domain')
-    return domain ? [`https://${domain}`, `http://${domain}`] : []
+    // TEMP: skip DB call to test if better-auth init is the issue
+    return []
+    // const domain = await getSystemConfig<string>('domain')
+    // return domain ? [`https://${domain}`, `http://${domain}`] : []
   },
 
   databaseHooks: {
