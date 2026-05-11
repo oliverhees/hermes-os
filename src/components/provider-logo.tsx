@@ -1,19 +1,12 @@
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 
-const LIGHT_THEMES = new Set([
-  'claude-nous-light',
-  'claude-official-light',
-  'claude-classic-light',
-  'claude-slate-light',
-])
-
 function useIsLightTheme(): boolean {
   const [light, setLight] = useState(false)
   useEffect(() => {
     const check = () => {
       const theme = document.documentElement.getAttribute('data-theme') || ''
-      setLight(LIGHT_THEMES.has(theme))
+      setLight(theme === 'light')
     }
     check()
     const observer = new MutationObserver(check)

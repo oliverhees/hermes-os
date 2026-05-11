@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { getTheme, setTheme } from '@/lib/theme'
+import { getThemeMode, setThemeMode } from '@/lib/theme'
 
 export type SettingsThemeMode = 'system' | 'light' | 'dark'
 export type AccentColor = 'orange' | 'purple' | 'blue' | 'green'
@@ -101,11 +101,13 @@ export function resolveTheme(theme: SettingsThemeMode): 'light' | 'dark' {
 }
 
 export function applyTheme(_theme?: SettingsThemeMode) {
-  setTheme(getTheme())
+  const mode = resolveTheme(_theme ?? 'dark')
+  setThemeMode(mode)
   document.documentElement.setAttribute('data-accent', 'orange')
 }
 
 export function initializeSettingsAppearance() {
-  setTheme(getTheme())
+  const mode = getThemeMode()
+  setThemeMode(mode)
   document.documentElement.setAttribute('data-accent', 'orange')
 }

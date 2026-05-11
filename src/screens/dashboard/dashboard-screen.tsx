@@ -849,23 +849,12 @@ export function DashboardScreen() {
           type="button"
           aria-label="Toggle theme"
           onClick={() => {
-            const LIGHT_DARK_PAIRS: Record<string, string> = {
-              'claude-nous': 'claude-nous-light',
-              'claude-nous-light': 'claude-nous',
-              'claude-official': 'claude-official-light',
-              'claude-official-light': 'claude-official',
-              'claude-classic': 'claude-classic-light',
-              'claude-classic-light': 'claude-classic',
-              'claude-slate': 'claude-slate-light',
-              'claude-slate-light': 'claude-slate',
-            }
-            const cur = document.documentElement.getAttribute('data-theme') || 'claude-official'
-            const nextDataTheme = LIGHT_DARK_PAIRS[cur] || (isDark ? 'claude-official-light' : 'claude-official')
-            import('@/lib/theme').then(({ setTheme }) => { setTheme(nextDataTheme as any) })
-            const nextMode = nextDataTheme.endsWith('-light') ? 'light' : 'dark'
-            applyTheme(nextMode)
-            updateSettings({ theme: nextMode })
-            setIsDark(nextMode === 'dark')
+            import('@/lib/theme').then(({ toggleTheme }) => {
+              const nextMode = toggleTheme()
+              applyTheme(nextMode)
+              updateSettings({ theme: nextMode })
+              setIsDark(nextMode === 'dark')
+            })
           }}
           className="flex items-center justify-center w-11 h-11 rounded-xl active:bg-white/10 transition-colors touch-manipulation"
           style={{ color: 'var(--theme-muted)' }}

@@ -18,7 +18,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type * as React from 'react'
 import type { LoaderStyle } from '@/hooks/use-chat-settings'
 import type { BrailleSpinnerPreset } from '@/components/ui/braille-spinner'
-import type { ThemeId } from '@/lib/theme'
+import type { ThemeMode } from '@/lib/theme'
 import type { SettingsNavId } from '@/components/settings/settings-sidebar'
 import type {LocaleId} from '@/lib/i18n';
 import { GROQ_STT_MODELS, STT_PROVIDER_OPTIONS } from '@/lib/stt-config'
@@ -32,7 +32,7 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { useSettings } from '@/hooks/use-settings'
 import { LOCALE_LABELS,  getLocale, setLocale } from '@/lib/i18n'
-import { THEMES, getTheme, isDarkTheme, setTheme } from '@/lib/theme'
+import { getThemeMode, setThemeMode } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 import {
   getChatProfileDisplayName,
@@ -110,125 +110,54 @@ function PageThemeSwatch({
 }
 
 const THEME_PREVIEWS: Record<
-  ThemeId,
+  ThemeMode,
   { bg: string; panel: string; border: string; accent: string; text: string }
 > = {
-  'claude-nous': {
-    bg: '#031a1a',
-    panel: '#082224',
-    border: 'rgba(255,255,255,0.12)',
-    accent: '#ffac02',
-    text: '#f8f1e3',
+  dark: {
+    bg: '#0a0a0a',
+    panel: '#141414',
+    border: '#2a2a2a',
+    accent: '#6366f1',
+    text: '#f5f5f5',
   },
-  'claude-nous-light': {
-    bg: '#F8FAF8',
-    panel: '#FBFDFB',
-    border: 'rgba(30,74,92,0.18)',
-    accent: '#2557B7',
-    text: '#16315F',
-  },
-  'claude-official': {
-    bg: '#0A0E1A',
-    panel: '#11182A',
-    border: '#24304A',
-    accent: '#6366F1',
-    text: '#E6EAF2',
-  },
-  'claude-official-light': {
-    bg: '#F7F7F1',
-    panel: '#FAFBF6',
-    border: '#CDD5DA',
-    accent: '#2557B7',
-    text: '#16315F',
-  },
-  'claude-classic': {
-    bg: '#0d0f12',
-    panel: '#1a1f26',
-    border: '#2a313b',
-    accent: '#b98a44',
-    text: '#eceff4',
-  },
-  'claude-slate': {
-    bg: '#0d1117',
-    panel: '#1c2128',
-    border: '#30363d',
-    accent: '#7eb8f6',
-    text: '#c9d1d9',
-  },
-  'claude-classic-light': {
-    bg: '#F5F2ED',
-    panel: '#FFFFFF',
-    border: '#D9D0C4',
-    accent: '#b98a44',
-    text: '#1a1f26',
-  },
-  'matrix': {
-    bg: '#020804',
-    panel: '#07130A',
-    border: 'rgba(0,255,65,0.28)',
-    accent: '#00FF41',
-    text: '#D8FFE3',
-  },
-  'matrix-light': {
-    bg: '#F4FFF6',
-    panel: '#FFFFFF',
-    border: 'rgba(0,126,34,0.2)',
-    accent: '#008F2D',
-    text: '#062A12',
-  },
-  'claude-slate-light': {
-    bg: '#F6F8FA',
-    panel: '#FFFFFF',
-    border: '#D0D7DE',
-    accent: '#3b82f6',
-    text: '#1F2328',
-  },
-  'scifi': {
-    bg: '#060b18',
-    panel: '#0a1628',
-    border: '#1a3a5c',
-    accent: '#00f0ff',
-    text: '#e0f7fa',
-  },
-  'scifi-light': {
-    bg: '#EEF1F5',
-    panel: '#FFFFFF',
-    border: '#B0BEC5',
-    accent: '#0097A7',
-    text: '#0A1628',
+  light: {
+    bg: '#fafafa',
+    panel: '#f0f0f0',
+    border: '#e5e5e5',
+    accent: '#6366f1',
+    text: '#171717',
   },
 }
 
 function WorkspaceThemePicker() {
   const { updateSettings } = useSettings()
-  const [current, setCurrent] = useState<ThemeId>(() => getTheme())
+  const [current, setCurrent] = useState<ThemeMode>(() => getThemeMode())
 
-  function applyWorkspaceTheme(id: ThemeId) {
-    setTheme(id)
-    updateSettings({ theme: isDarkTheme(id) ? 'dark' : 'light' })
-    setCurrent(id)
+  function applyWorkspaceTheme(mode: ThemeMode) {
+    setThemeMode(mode)
+    updateSettings({ theme: mode })
+    setCurrent(mode)
   }
 
   return (
-    <div className="grid w-full grid-cols-2 gap-3 lg:grid-cols-4">
-      {THEMES.map((t) => {
-        const isActive = current === t.id
+    <div className="grid w-full grid-cols-2 gap-3">
+      {(['light', 'dark'] as ThemeMode[]).map((mode) => {
+        const isActive = current === mode
         return (
           <button
-            key={t.id}
+            key={mode}
             type="button"
-            onClick={() => applyWorkspaceTheme(t.id)}
+            onClick={() => applyWorkspaceTheme(mode)}
             className={cn(
-              'flex min-h-[112px] flex-col gap-2.5 rounded-xl border p-3.5 text-left transition-all',
+              'flex flex-col gap-2.5 rounded-xl border p-3.5 text-left transition-all',
               isActive
                 ? 'border-[var(--theme-accent)] bg-[var(--theme-accent-subtle)] text-[var(--theme-text)] shadow-sm'
                 : 'border-[var(--theme-border)] bg-[var(--theme-card)] text-[var(--theme-text)] hover:-translate-y-0.5 hover:bg-[var(--theme-card2)]',
             )}
           >
-            <PageThemeSwatch colors={THEME_PREVIEWS[t.id]} />
+            <PageThemeSwatch colors={THEME_PREVIEWS[mode]} />
             <div className="flex items-center gap-1.5">
-              <span className="text-xs">{t.icon}</span>
-              <span className="text-xs font-semibold">{t.label}</span>
+              <span className="text-xs font-semibold capitalize">{mode}</span>
               {isActive && (
                 <span className="ml-auto text-[9px] font-bold uppercase tracking-wide text-[var(--theme-accent)]">
                   Active
@@ -236,7 +165,7 @@ function WorkspaceThemePicker() {
               )}
             </div>
             <p className="text-[10px] leading-tight text-[var(--theme-muted)]">
-              {t.description}
+              {mode === 'dark' ? 'Dark mode' : 'Light mode'}
             </p>
           </button>
         )

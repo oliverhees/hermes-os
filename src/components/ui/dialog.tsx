@@ -26,25 +26,20 @@ function DialogContent({ className, children, style }: DialogContentProps) {
   return (
     <Dialog.Portal>
       <Dialog.Backdrop
-        className="fixed inset-0 transition-all duration-150 data-[state=open]:opacity-100 data-[state=closed]:opacity-0"
-        style={{ background: 'rgba(0,0,0,0.5)' }}
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-all duration-150 data-[state=open]:opacity-100 data-[state=closed]:opacity-0"
       />
       <Dialog.Popup
         className={cn(
-          'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
-          'w-[min(400px,92vw)] max-h-[90vh] rounded-[10px] p-0 overflow-hidden flex flex-col',
+          'fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
+          'w-[min(400px,92vw)] max-h-[90vh] rounded-xl p-0 overflow-hidden flex flex-col',
           'transition-all duration-150',
           'data-[state=open]:opacity-100 data-[state=closed]:opacity-0',
           'data-[state=open]:scale-100 data-[state=closed]:scale-95',
+          'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100',
+          'border border-zinc-200 dark:border-zinc-800 shadow-2xl',
           className,
         )}
-        style={{
-          background: 'var(--theme-panel)',
-          border: '1px solid var(--theme-border)',
-          boxShadow: 'var(--theme-shadow-3)',
-          color: 'var(--theme-text)',
-          ...style,
-        }}
+        style={style}
       >
         {children}
       </Dialog.Popup>
@@ -58,7 +53,6 @@ function DialogTitle({ className, ...props }: DialogTitleProps) {
   return (
     <Dialog.Title
       className={cn('text-lg font-medium', className)}
-      style={{ color: 'var(--theme-text)' }}
       {...props}
     />
   )
@@ -69,8 +63,7 @@ type DialogDescriptionProps = React.ComponentProps<typeof Dialog.Description>
 function DialogDescription({ className, ...props }: DialogDescriptionProps) {
   return (
     <Dialog.Description
-      className={cn('text-sm', className)}
-      style={{ color: 'var(--theme-muted)' }}
+      className={cn('text-sm text-zinc-500 dark:text-zinc-400', className)}
       {...props}
     />
   )

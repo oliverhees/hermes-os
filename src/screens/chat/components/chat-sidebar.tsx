@@ -70,43 +70,18 @@ function ThemeToggleMini() {
   const _theme = useSettingsStore((state) => state.settings.theme)
   const updateSettings = useSettingsStore((state) => state.updateSettings)
   void _theme
-  // Detect dark/light from actual data-theme attribute
-  const currentDataTheme =
-    typeof document !== 'undefined'
-      ? document.documentElement.getAttribute('data-theme') || 'claude-nous'
-      : 'claude-nous'
-  const isDark = !currentDataTheme.endsWith('-light')
-
-  // Map between dark and light counterparts — must include all theme families
-  const LIGHT_DARK_PAIRS: Record<string, string> = {
-    'claude-nous': 'claude-nous-light',
-    'claude-nous-light': 'claude-nous',
-    'claude-official': 'claude-official-light',
-    'claude-official-light': 'claude-official',
-    'claude-classic': 'claude-classic-light',
-    'claude-classic-light': 'claude-classic',
-    'claude-slate': 'claude-slate-light',
-    'claude-slate-light': 'claude-slate',
-  }
+  const isDark = useSettingsStore.getState().settings.theme === 'dark' ||
+    (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark')
 
   return (
     <button
       type="button"
       onClick={() => {
-        // Fall back to current family rather than dropping the user into claude-official
-        const nextDataTheme =
-          LIGHT_DARK_PAIRS[currentDataTheme] ||
-          (isDark
-            ? `${currentDataTheme}-light`
-            : currentDataTheme.replace(/-light$/, ''))
-        // Import and call setTheme to persist and apply
-        import('@/lib/theme').then(({ setTheme }) => {
-          setTheme(nextDataTheme as any)
+        import('@/lib/theme').then(({ toggleTheme }) => {
+          const nextMode = toggleTheme()
+          applyTheme(nextMode)
+          updateSettings({ theme: nextMode })
         })
-        // Also update settings hook
-        const nextMode = nextDataTheme.endsWith('-light') ? 'light' : 'dark'
-        applyTheme(nextMode)
-        updateSettings({ theme: nextMode })
       }}
       className="shrink-0 rounded-lg p-1.5 transition-colors hover:opacity-80"
       style={{ color: 'var(--theme-muted)' }}

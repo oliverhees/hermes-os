@@ -22,18 +22,15 @@ import type * as React from 'react'
 import type { AccentColor, SettingsThemeMode } from '@/hooks/use-settings'
 import type { LoaderStyle } from '@/hooks/use-chat-settings'
 import type { BrailleSpinnerPreset } from '@/components/ui/braille-spinner'
-import type { ThemeId } from '@/lib/theme'
+import type { ThemeMode } from '@/lib/theme'
 import type {LocaleId} from '@/lib/i18n';
 import { GROQ_STT_MODELS, STT_PROVIDER_OPTIONS } from '@/lib/stt-config'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { applyTheme, useSettings } from '@/hooks/use-settings'
 import {
-  THEMES,
-  getTheme,
-  getThemeVariant,
-  isDarkTheme,
-  setTheme,
+  getThemeMode,
+  setThemeMode,
 } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 import {
@@ -87,16 +84,9 @@ const SECTIONS: Array<{ id: SectionId; label: string; icon: any }> = [
   { id: 'language', label: 'Language', icon: MessageMultiple01Icon },
 ]
 
-const DARK_ENTERPRISE_THEMES = new Set<ThemeId>([
-  'claude-nous',
-  'claude-official',
-  'claude-classic',
-  'claude-slate',
-])
-
-function _isDarkEnterpriseTheme(theme: string | null): theme is ThemeId {
+function _isDarkEnterpriseTheme(theme: string | null): boolean {
   if (!theme) return false
-  return DARK_ENTERPRISE_THEMES.has(theme as ThemeId)
+  return theme === 'dark'
 }
 void _isDarkEnterpriseTheme
 
@@ -936,9 +926,6 @@ function AppearanceContent() {
   function handleThemeChange(value: string) {
     const theme = value as SettingsThemeMode
     applyTheme(theme)
-    if (theme === 'light' || theme === 'dark') {
-      setTheme(getThemeVariant(getTheme(), theme))
-    }
     updateSettings({ theme })
   }
 
@@ -1016,103 +1003,27 @@ function AppearanceContent() {
   )
 }
 
-const ENTERPRISE_THEME_FAMILIES: Array<ThemeId> = [
-  'claude-nous',
-  'matrix',
-  'claude-official',
-  'claude-classic',
-  'claude-slate',
-]
-
-const ENTERPRISE_THEMES = THEMES.map((theme) => ({
-  ...theme,
-  desc: theme.description,
-  preview:
-    theme.id === 'claude-nous'
-      ? {
-          bg: '#041C1C',
-          panel: '#06282A',
-          border: 'rgba(255,230,203,0.2)',
-          accent: '#FFAC02',
-          text: '#FFE6CB',
-        }
-      : theme.id === 'claude-nous-light'
-        ? {
-            bg: '#F8FAF8',
-            panel: '#FBFDFB',
-            border: 'rgba(30,74,92,0.18)',
-            accent: '#2557B7',
-            text: '#16315F',
-          }
-        : theme.id === 'matrix'
-          ? {
-              bg: '#020804',
-              panel: '#07130A',
-              border: 'rgba(0,255,65,0.28)',
-              accent: '#00FF41',
-              text: '#D8FFE3',
-            }
-          : theme.id === 'matrix-light'
-            ? {
-                bg: '#F4FFF6',
-                panel: '#FFFFFF',
-                border: 'rgba(0,126,34,0.2)',
-                accent: '#008F2D',
-                text: '#062A12',
-              }
-            : theme.id === 'claude-official'
-              ? {
-                  bg: '#0A0E1A',
-                  panel: '#11182A',
-                  border: '#24304A',
-                  accent: '#6366F1',
-                  text: '#E6EAF2',
-                }
-              : theme.id === 'claude-official-light'
-                ? {
-                    bg: '#F7F7F1',
-                    panel: '#FAFBF6',
-                    border: '#CDD5DA',
-                    accent: '#2557B7',
-                    text: '#16315F',
-                  }
-                : theme.id === 'claude-classic'
-              ? {
-                  bg: '#0d0f12',
-                  panel: '#1a1f26',
-                  border: '#2a313b',
-                  accent: '#b98a44',
-                  text: '#eceff4',
-                }
-              : theme.id === 'claude-classic-light'
-                ? {
-                    bg: '#F5F2ED',
-                    panel: '#FCFAF7',
-                    border: '#D8CCBC',
-                    accent: '#b98a44',
-                    text: '#1a1f26',
-                  }
-                : theme.id === 'claude-slate'
-                  ? {
-                      bg: '#0d1117',
-                      panel: '#1c2128',
-                      border: '#30363d',
-                      accent: '#7eb8f6',
-                      text: '#c9d1d9',
-                    }
-                  : {
-                      bg: '#F6F8FA',
-                      panel: '#FFFFFF',
-                      border: '#D0D7DE',
-                      accent: '#3b82f6',
-                      text: '#24292f',
-                    },
-}))
+const THEME_PREVIEWS: Record<ThemeMode, { bg: string; panel: string; border: string; accent: string; text: string }> = {
+  dark: {
+    bg: '#0a0a0a',
+    panel: '#141414',
+    border: '#2a2a2a',
+    accent: '#6366f1',
+    text: '#f5f5f5',
+  },
+  light: {
+    bg: '#fafafa',
+    panel: '#f0f0f0',
+    border: '#e5e5e5',
+    accent: '#6366f1',
+    text: '#171717',
+  },
+}
 
 function ThemeSwatch({
   colors,
 }: {
-  colors: (typeof ENTERPRISE_THEMES)[number]['preview']
+  colors: { bg: string; panel: string; border: string; accent: string; text: string }
 }) {
   return (
     <div
@@ -1151,71 +1062,63 @@ function ThemeSwatch({
 
 function EnterpriseThemePicker() {
   const { updateSettings } = useSettings()
-  const [current, setCurrent] = useState(() => {
-    if (typeof window === 'undefined') return 'claude-nous'
-    return getTheme()
+  const [current, setCurrent] = useState<ThemeMode>(() => {
+    if (typeof window === 'undefined') return 'dark'
+    return getThemeMode()
   })
-  const currentMode = isDarkTheme(current) ? 'dark' : 'light'
 
   useEffect(() => {
-    setCurrent(getTheme())
+    setCurrent(getThemeMode())
   }, [])
 
-  function applyEnterpriseTheme(id: ThemeId) {
-    setTheme(id)
-    updateSettings({ theme: isDarkTheme(id) ? 'dark' : 'light' })
-    setCurrent(id)
+  function applyThemeMode(mode: ThemeMode) {
+    setThemeMode(mode)
+    updateSettings({ theme: mode })
+    setCurrent(mode)
   }
 
-  function toggleEnterpriseThemeMode() {
-    const nextMode = currentMode === 'dark' ? 'light' : 'dark'
-    applyEnterpriseTheme(getThemeVariant(current, nextMode))
+  function toggleThemeMode() {
+    const nextMode = current === 'dark' ? 'light' : 'dark'
+    applyThemeMode(nextMode)
   }
-
-  const visibleThemes = ENTERPRISE_THEME_FAMILIES.map((themeId) =>
-    ENTERPRISE_THEMES.find(
-      (theme) => theme.id === getThemeVariant(themeId, currentMode),
-    ),
-  ).filter(Boolean) as typeof ENTERPRISE_THEMES
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between rounded-lg border border-primary-200 px-3 py-2">
         <div>
           <p className="text-xs font-semibold text-primary-900 dark:text-neutral-100">
-            {currentMode === 'dark' ? 'Dark mode' : 'Light mode'}
+            {current === 'dark' ? 'Dark mode' : 'Light mode'}
           </p>
           <p className="text-[11px] text-primary-500 dark:text-neutral-400">
-            Toggle the current theme family between paired light and dark
-            variants.
+            Toggle between light and dark theme.
           </p>
         </div>
         <button
           type="button"
-          onClick={toggleEnterpriseThemeMode}
+          onClick={toggleThemeMode}
           className="inline-flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-900 transition-colors hover:bg-primary-100"
           aria-label={
-            currentMode === 'dark'
-              ? 'Switch enterprise theme to light mode'
-              : 'Switch enterprise theme to dark mode'
+            current === 'dark'
+              ? 'Switch to light mode'
+              : 'Switch to dark mode'
           }
         >
           <HugeiconsIcon
-            icon={currentMode === 'dark' ? Sun01Icon : Moon01Icon}
+            icon={current === 'dark' ? Sun01Icon : Moon01Icon}
             size={16}
             strokeWidth={1.5}
           />
-          {currentMode === 'dark' ? 'Light' : 'Dark'}
+          {current === 'dark' ? 'Light' : 'Dark'}
         </button>
       </div>
       <div className="grid w-full grid-cols-2 gap-2">
-        {visibleThemes.map((t) => {
-          const isActive = current === t.id
+        {(['light', 'dark'] as ThemeMode[]).map((mode) => {
+          const isActive = current === mode
           return (
             <button
-              key={t.id}
+              key={mode}
               type="button"
-              onClick={() => applyEnterpriseTheme(t.id)}
+              onClick={() => applyThemeMode(mode)}
               className={cn(
                 'flex flex-col gap-1.5 rounded-lg border p-2 text-left transition-colors',
                 isActive
@@ -1223,11 +1126,10 @@ function EnterpriseThemePicker() {
                   : 'border-primary-200 bg-primary-50/80 hover:bg-primary-100',
               )}
             >
-              <ThemeSwatch colors={t.preview} />
+              <ThemeSwatch colors={THEME_PREVIEWS[mode]} />
               <div className="flex items-center gap-1">
-                <span className="text-xs">{t.icon}</span>
-                <span className="text-xs font-semibold text-primary-900 dark:text-neutral-100">
-                  {t.label}
+                <span className="text-xs font-semibold text-primary-900 dark:text-neutral-100 capitalize">
+                  {mode}
                 </span>
                 {isActive && (
                   <span className="ml-auto text-[9px] font-bold text-accent-600 uppercase tracking-wide">
@@ -1236,7 +1138,7 @@ function EnterpriseThemePicker() {
                 )}
               </div>
               <p className="text-[10px] text-primary-500 dark:text-neutral-400 leading-tight">
-                {t.desc}
+                {mode === 'dark' ? 'Dark theme' : 'Light theme'}
               </p>
             </button>
           )

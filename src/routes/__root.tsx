@@ -46,35 +46,23 @@ const APP_CSP = [
   "frame-src 'self' http: https:",
 ].join('; ')
 
-const THEME_STORAGE_KEY = 'claude-theme'
-const DEFAULT_THEME = 'claude-nous'
-const VALID_THEMES = [
-  'claude-nous',
-  'claude-nous-light',
-  'claude-official',
-  'claude-official-light',
-  'claude-classic',
-  'claude-classic-light',
-  'claude-slate',
-  'claude-slate-light',
-]
+import { getThemeMode, type ThemeMode } from '@/lib/theme'
+
+const THEME_STORAGE_KEY = 'hermes-theme-mode'
+const DEFAULT_THEME: ThemeMode = 'dark'
+const VALID_THEMES = ['dark', 'light']
 
 const themeScript = `
 (() => {
   window.process = window.process || { env: {}, platform: 'browser' };
-
   try {
     const root = document.documentElement
     const storedTheme = localStorage.getItem('${THEME_STORAGE_KEY}')
-    const theme = ${JSON.stringify(VALID_THEMES)}.includes(storedTheme) ? storedTheme : '${DEFAULT_THEME}'
-    const lightThemes = ['claude-nous-light', 'claude-official-light', 'claude-classic-light', 'claude-slate-light']
-    const isDark = !lightThemes.includes(theme)
+    const theme = storedTheme === 'light' ? 'light' : 'dark'
     root.classList.remove('light', 'dark', 'system')
-    root.classList.add(isDark ? 'dark' : 'light')
+    root.classList.add(theme)
     root.setAttribute('data-theme', theme)
-    root.style.setProperty('color-scheme', isDark ? 'dark' : 'light')
-
-    // Demo mode
+    root.style.setProperty('color-scheme', theme)
     try {
       if (new URLSearchParams(window.location.search).get('demo') === '1') {
         document.documentElement.setAttribute('data-demo', 'true');
@@ -89,18 +77,9 @@ const themeColorScript = `
   try {
     const root = document.documentElement
     const theme = root.getAttribute('data-theme') || '${DEFAULT_THEME}'
-    const colors = {
-      'claude-nous': '#031A1A',
-      'claude-nous-light': '#F8FAF8',
-      'claude-official': '#0A0E1A',
-      'claude-official-light': '#F7F7F1',
-      'claude-classic': '#0d0f12',
-      'claude-classic-light': '#F5F2ED',
-      'claude-slate': '#0d1117',
-      'claude-slate-light': '#F6F8FA',
-    }
+    const colors = { dark: '#0a0a0a', light: '#fafafa' }
     const nextColor = colors[theme] || colors['${DEFAULT_THEME}']
-    const isDark = !['claude-nous-light', 'claude-official-light', 'claude-classic-light', 'claude-slate-light'].includes(String(theme))
+    const isDark = theme === 'dark'
 
     let meta = document.querySelector('meta[name="theme-color"]')
     if (!meta) {
@@ -430,48 +409,18 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           (function(){
             if (document.getElementById('splash-screen')) return;
             if (location.pathname === '/hermes-world' || location.pathname.indexOf('/hermes-world/') === 0 || location.pathname === '/world' || location.pathname.indexOf('/world/') === 0) return;
-            var bg = '#031A1A', txt = '#F8F1E3', muted = '#9CB2AE', accent = '#FFAC02';
+            var bg = '#0a0a0a', txt = '#f5f5f5', muted = '#888888', accent = '#6366f1';
             try {
               var theme = localStorage.getItem('${THEME_STORAGE_KEY}') || '${DEFAULT_THEME}';
-              if (theme === 'claude-nous') {
-                bg = '#031A1A';
-                txt = '#F8F1E3';
-                muted = '#9CB2AE';
-                accent = '#FFAC02';
-              } else if (theme === 'claude-nous-light') {
-                bg = '#F8FAF8';
-                txt = '#16315F';
-                muted = '#6F7D96';
-                accent = '#2557B7';
-              } else if (theme === 'claude-classic') {
-                bg = '#0d0f12';
-                txt = '#eceff4';
-                muted = '#7f8a96';
-                accent = '#b98a44';
-              } else if (theme === 'claude-official-light') {
-                bg = '#F7F7F1';
-                txt = '#16315F';
-                muted = '#6F7D96';
-                accent = '#2557B7';
-              } else if (theme === 'claude-classic-light') {
-                bg = '#F5F2ED';
-                txt = '#1a1f26';
-                muted = '#6F675E';
-                accent = '#b98a44';
-              } else if (theme === 'claude-slate') {
-                bg = '#0d1117';
-                txt = '#c9d1d9';
-                muted = '#8b949e';
-                accent = '#7eb8f6';
-              } else if (theme === 'claude-slate-light') {
-                bg = '#F6F8FA';
-                txt = '#24292f';
-                muted = '#57606A';
-                accent = '#3b82f6';
+              if (theme === 'light') {
+                bg = '#fafafa';
+                txt = '#171717';
+                muted = '#737373';
+                accent = '#6366f1';
               }
             } catch(e){}
 
-            var isDark = !['claude-nous-light','claude-official-light','claude-classic-light','claude-slate-light'].includes(theme);
+            var isDark = theme !== 'light';
             var quips = ["Consulting the oracle...","Loading ancient knowledge...","Warming up the messenger...","Calibrating tool chain...","Summoning your agent...","Preparing the workspace...","Bridging realms...","Initializing agent runtime..."];
             var quip = quips[Math.floor(Math.random() * quips.length)];
 
