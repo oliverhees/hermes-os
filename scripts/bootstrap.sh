@@ -6,6 +6,7 @@ mkdir -p .secrets && chmod 700 .secrets
 [[ -f .secrets/encryption_key ]] || ./scripts/init-encryption-key.sh
 [[ -f .secrets/pg_password ]] || (printf '%s' "$(openssl rand -base64 32 | tr -d '\n')" > .secrets/pg_password && chmod 400 .secrets/pg_password)
 [[ -f .secrets/setup_init_token ]] || (openssl rand -hex 32 > .secrets/setup_init_token && chmod 400 .secrets/setup_init_token)
+[[ -f .secrets/better_auth_secret ]] || (openssl rand -base64 32 | tr -d '\n' > .secrets/better_auth_secret && chmod 400 .secrets/better_auth_secret)
 
 # 2. Detect public IP
 if [[ -z "${PUBLIC_IP:-}" ]]; then
