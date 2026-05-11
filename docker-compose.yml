@@ -39,6 +39,8 @@ secrets:
     file: ./.secrets/pg_password
   encryption_key:
     file: ./.secrets/encryption_key
+  better_auth_secret:
+    file: ./.secrets/better_auth_secret
 
 networks:
   edge: {}
@@ -141,12 +143,14 @@ services:
     secrets:
       - pg_password
       - encryption_key
+      - better_auth_secret
     entrypoint:
       - /bin/sh
       - -c
       - |
         export DATABASE_URL="postgresql://hermes_os:$$(cat /run/secrets/pg_password)@postgres:5432/hermes_os"
         export ENCRYPTION_KEY="$$(cat /run/secrets/encryption_key)"
+        export BETTER_AUTH_SECRET="$$(cat /run/secrets/better_auth_secret)"
         exec /usr/bin/tini -- gosu workspace node --max-old-space-size=2048 server-entry.cjs
 
   hermes-agent:

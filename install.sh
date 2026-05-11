@@ -498,6 +498,14 @@ generate_secrets() {
     secrets_status+=("setup_token:    ${C_GREEN}generated${C_RESET}")
   fi
 
+  if [[ -f ./.secrets/better_auth_secret ]]; then
+    secrets_status+=("better_auth_secret: ${C_DIM}preserved${C_RESET}")
+  else
+    printf '%s' "$(openssl rand -base64 32 | tr -d '\n')" > ./.secrets/better_auth_secret
+    chmod 400 ./.secrets/better_auth_secret
+    secrets_status+=("better_auth_secret: ${C_GREEN}generated${C_RESET}")
+  fi
+
   for line in "${secrets_status[@]}"; do
     echo -e "    ${line}"
   done
