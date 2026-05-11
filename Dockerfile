@@ -11,12 +11,15 @@
 #
 # ─── build stage ─────────────────────────────────────────────────────────
 FROM node:22-slim AS build
-RUN corepack enable && apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-# Install deps (cache-friendly: copy only manifests first)
+# pnpm 9.x (lockfile v9.0) requires explicit approve-builds for packages with
+# build scripts (electron, esbuild). Set via .npmrc so --frozen-lockfile passes.
+RUN corepack enable && corepack prepare pnpm@9.8.0 --activate
+
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+RUN echo "approve-builds=true" > .npmrc && pnpm install --frozen-lockfile
 
 # Copy sources and build
 COPY . .
@@ -25,8 +28,10 @@ RUN pnpm build
 # ─── migrator stage ─────────────────────────────────────────────────────
 FROM node:22-slim AS migrator
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN corepack enable && corepack prepare pnpm@9.8.0 --activate
 COPY package.json pnpm-lock.yaml* ./
-RUN corepack enable && pnpm install --frozen-lockfile --prod=false
+RUN echo "approve-builds=true" > .npmrc && pnpm install --frozen-lockfile
 COPY drizzle.config.ts ./
 COPY drizzle ./drizzle
 COPY scripts ./scripts
