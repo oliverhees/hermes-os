@@ -25,6 +25,11 @@ RUN echo "approve-builds=true" > .npmrc && pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
 
+# Bundle server-entry.js (ESM/TypeScript) to plain CommonJS so Node can run it directly
+RUN pnpm exec esbuild server-entry.js --bundle --platform=node --format=cjs --outfile=server-entry.cjs \
+    --external:dotenv/config --external:express --external:better-auth/node \
+    --banner:js="import { createRequire } from 'module';const require=createRequire(import.meta.url);"
+
 # ─── migrator stage ─────────────────────────────────────────────────────
 FROM node:22-slim AS migrator
 WORKDIR /app
@@ -46,8 +51,7 @@ FROM node:22-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates curl tini python3 gosu \
     && rm -rf /var/lib/apt/lists/* \
-    && groupadd -r workspace && useradd -r -g workspace -u 10010 workspace \
-    && npm install -g tsx
+    && groupadd -r workspace && useradd -r -g workspace -u 10010 workspace
 
 WORKDIR /app
 
@@ -55,7 +59,7 @@ WORKDIR /app
 COPY --from=build --chown=workspace:workspace /app/dist ./dist
 COPY --from=build --chown=workspace:workspace /app/node_modules ./node_modules
 COPY --from=build --chown=workspace:workspace /app/package.json ./package.json
-COPY --from=build --chown=workspace:workspace /app/server-entry.js ./server-entry.js
+COPY --from=build --chown=workspace:workspace /app/server-entry.cjs ./server-entry.cjs
 COPY --from=build --chown=workspace:workspace /app/skills ./skills
 COPY --from=build --chown=workspace:workspace /app/src ./src
 
