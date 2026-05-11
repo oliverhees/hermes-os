@@ -39,7 +39,7 @@ COPY tsconfig.json ./
 RUN pnpm add -D tsx
 
 # ─── runtime stage ────────────────────────────────────────────────────────
-FROM node:22-slim
+FROM node:22-slim AS runtime
 # python3 is required by scripts/pty-helper.py (terminal feature). Originally
 # added in PR #185 for issue #161; regressed by the 2026-05-01 rename commit
 # efcb7d14 and re-added here per issue #259.
