@@ -1,5 +1,4 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { Dashboard } from '@/pages/Dashboard'
 
 export const Route = createFileRoute('/')({
   ssr: false,
@@ -10,6 +9,6 @@ export const Route = createFileRoute('/')({
     })
   },
   component: function IndexRoute() {
-    return <Dashboard />
+    return null
   },
 })
