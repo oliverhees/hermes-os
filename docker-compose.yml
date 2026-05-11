@@ -81,7 +81,7 @@ services:
         condition: service_healthy
     secrets: [pg_password]
     command: >
-      sh -c "DATABASE_URL=\"postgresql://hermes_os:$$(cat /run/secrets/pg_password)@postgres:5432/hermes_os?ssl=0\" pnpm db:migrate"
+      sh -c "DATABASE_URL=\"postgresql://hermes_os:$$(cat /run/secrets/pg_password)@postgres:5432/hermes_os\" pnpm db:migrate"
     restart: "no"
 
   socket-proxy:
@@ -150,7 +150,7 @@ services:
       - /bin/sh
       - -c
       - |
-        export DATABASE_URL="postgresql://hermes_os:$$(cat /run/secrets/pg_password)@postgres:5432/hermes_os?sslmode=disable"
+        export DATABASE_URL="postgresql://hermes_os:$$(cat /run/secrets/pg_password)@postgres:5432/hermes_os"
         export PGSSLMODE=disable
         export ENCRYPTION_KEY="$$(cat /run/secrets/encryption_key)"
         export BETTER_AUTH_SECRET="$$(cat /run/secrets/better_auth_secret)"
