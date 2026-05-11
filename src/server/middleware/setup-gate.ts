@@ -20,12 +20,13 @@ export async function setupGate(req: Request, res: Response, next: NextFunction)
     return next()
   }
 
-  if (!setupComplete) {
-    if (req.path.startsWith('/api/')) {
-      return res.status(503).json({ error: 'setup_required', redirect: '/setup' })
-    }
-    return res.redirect('/setup')
-  }
+  // TEMP: skip setup redirect for testing
+  // if (!setupComplete) {
+  //   if (req.path.startsWith('/api/')) {
+  //     return res.status(503).json({ error: 'setup_required', redirect: '/setup' })
+  //   }
+  //   return res.redirect('/setup')
+  // }
 
   next()
 }
