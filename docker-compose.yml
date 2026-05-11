@@ -139,6 +139,7 @@ services:
       DOCKER_HOST: tcp://socket-proxy:2375
       PUBLIC_IP: ${PUBLIC_IP}
       DOMAIN: ${DOMAIN}
+      BETTER_AUTH_URL: https://${DOMAIN:-hermesos.paione.de}
       PG_PASSWORD_FILE: /run/secrets/pg_password
       ENCRYPTION_KEY_FILE: /run/secrets/encryption_key
       PGSSLMODE: disable
