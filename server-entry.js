@@ -2,14 +2,13 @@ import 'dotenv/config'
 import express from 'express'
 import { createServer } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
-import { join, fileURLToPath } from 'node:path'
+import { join } from 'node:path'
 import { toNodeHandler } from 'better-auth/node'
 import { auth } from './src/server/auth'
 import { setupGate } from './src/server/middleware/setup-gate'
 import setupRouter from './src/server/routes/setup'
 import adminRouter from './src/server/routes/admin'
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const CLIENT_DIR = join(__dirname, 'dist', 'client')
 
 const port = parseInt(process.env.PORT || '3000', 10)
