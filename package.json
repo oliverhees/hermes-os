@@ -57,7 +57,7 @@
     "drizzle-orm": "^0.45.2",
     "ecctrl": "^1.0.97",
     "electron-updater": "^6.6.2",
-    "express": "^5.2.1",
+    "express": "^4.21.0",
     "framer-motion": "^12.36.0",
     "marked": "^17.0.1",
     "motion": "^12.29.2",
