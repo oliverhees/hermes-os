@@ -146,3 +146,9 @@ skills-bundle/
 .hermes/
 .env.bak-*
 pr-triage-20260505-*/
+
+# Phase 1 additions
+.secrets/
+postgres-data/
+drizzle/meta/*.json
+!drizzle/meta/_journal.json

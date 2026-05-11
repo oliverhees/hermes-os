@@ -20,7 +20,16 @@
 # the workspace service so local source is compiled instead of pulled.
 
 services:
+  postgres:
+    ports:
+      - "5432:5432"
   hermes-workspace:
     build:
       context: .
       dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: development
+      DB_LOG: "1"
+    volumes:
+      - ./src:/app/src
+      - ./server-entry.js:/app/server-entry.js

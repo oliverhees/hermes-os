@@ -22,6 +22,17 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
 
+# ─── migrator stage ─────────────────────────────────────────────────────
+FROM node:22-slim AS migrator
+WORKDIR /app
+COPY package.json pnpm-lock.yaml* ./
+RUN corepack enable && pnpm install --frozen-lockfile --prod=false
+COPY drizzle.config.ts ./
+COPY drizzle ./drizzle
+COPY scripts ./scripts
+COPY tsconfig.json ./
+RUN pnpm add -D tsx
+
 # ─── runtime stage ────────────────────────────────────────────────────────
 FROM node:22-slim
 # python3 is required by scripts/pty-helper.py (terminal feature). Originally
