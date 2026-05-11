@@ -549,13 +549,31 @@ build_stack() {
   info "This pulls Postgres, Caddy, the socket-proxy, hermes-agent, and builds the hermes-os image."
   info "First run takes 3-8 minutes depending on bandwidth."
 
-  if docker compose build --progress=plain >> "$LOG_FILE" 2>&1; then
-    ok "Build complete."
-  else
-    err "Build failed. Last 30 lines:"
-    tail -30 "$LOG_FILE" | sed 's/^/    /'
-    fatal "Build failed — see $LOG_FILE"
-  fi
+  local max_retries=3
+  local attempt=1
+
+  while [[ $attempt -le $max_retries ]]; do
+    if [[ $attempt -gt 1 ]]; then
+      info "Retry $attempt/$max_retries in 10 seconds (Docker Hub rate limit may be temporary)..."
+      sleep 10
+    fi
+
+    info "Building (attempt $attempt/$max_retries)..."
+
+    if docker compose build --pull always --progress=plain >> "$LOG_FILE" 2>&1; then
+      ok "Build complete."
+      return 0
+    else
+      local exit_code=$?
+      if [[ $attempt -eq $max_retries ]]; then
+        err "Build failed after $max_retries attempts."
+        tail -30 "$LOG_FILE" | sed 's/^/    /'
+        fatal "Build failed — see $LOG_FILE"
+      fi
+      warn "Build attempt $attempt failed — retrying..."
+    fi
+    attempt=$((attempt + 1))
+  done
 }
 
 # ════════════════════════════════════════════════════════════════════
