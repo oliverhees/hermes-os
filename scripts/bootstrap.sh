@@ -4,7 +4,7 @@ mkdir -p .secrets && chmod 700 .secrets
 
 # 1. Generate secrets if missing
 [[ -f .secrets/encryption_key ]] || ./scripts/init-encryption-key.sh
-[[ -f .secrets/pg_password ]] || (openssl rand -base64 32 | tr -d '\n' > .secrets/pg_password && chmod 400 .secrets/pg_password)
+[[ -f .secrets/pg_password ]] || (printf '%s' "$(openssl rand -base64 32 | tr -d '\n')" > .secrets/pg_password && chmod 400 .secrets/pg_password)
 [[ -f .secrets/setup_init_token ]] || (openssl rand -hex 32 > .secrets/setup_init_token && chmod 400 .secrets/setup_init_token)
 
 # 2. Detect public IP

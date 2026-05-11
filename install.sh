@@ -477,7 +477,7 @@ generate_secrets() {
   if [[ -f ./.secrets/encryption_key ]]; then
     secrets_status+=("encryption_key: ${C_DIM}preserved${C_RESET}")
   else
-    openssl rand -base64 32 | tr -d '\n' > ./.secrets/encryption_key
+    printf '%s' "$(openssl rand -base64 32 | tr -d '\n')" > ./.secrets/encryption_key
     chmod 400 ./.secrets/encryption_key
     secrets_status+=("encryption_key: ${C_GREEN}generated${C_RESET}")
   fi
@@ -485,7 +485,7 @@ generate_secrets() {
   if [[ -f ./.secrets/pg_password ]]; then
     secrets_status+=("pg_password:    ${C_DIM}preserved${C_RESET}")
   else
-    openssl rand -base64 32 | tr -d '\n=+/' | head -c 40 > ./.secrets/pg_password
+    printf '%s' "$(openssl rand -base64 32 | tr -d '\n=+/' | head -c 40)" > ./.secrets/pg_password
     chmod 400 ./.secrets/pg_password
     secrets_status+=("pg_password:    ${C_GREEN}generated${C_RESET}")
   fi
@@ -493,7 +493,7 @@ generate_secrets() {
   if [[ -f ./.secrets/setup_init_token ]]; then
     secrets_status+=("setup_token:    ${C_DIM}preserved${C_RESET}")
   else
-    openssl rand -hex 32 > ./.secrets/setup_init_token
+    printf '%s' "$(openssl rand -hex 32)" > ./.secrets/setup_init_token
     chmod 400 ./.secrets/setup_init_token
     secrets_status+=("setup_token:    ${C_GREEN}generated${C_RESET}")
   fi
