@@ -579,7 +579,10 @@ build_stack() {
 
     info "Building (attempt $attempt/$max_retries)..."
 
-    if docker compose build --progress=plain >> "$LOG_FILE" 2>&1; then
+    # Build each target sequentially to avoid buildx race conditions when
+    # both hermes-os and migrator try to resolve their base images at once.
+    if docker build --progress=plain -f Dockerfile --target migrator . >> "$LOG_FILE" 2>&1 \
+       && docker build --progress=plain -f Dockerfile --target runtime . >> "$LOG_FILE" 2>&1; then
       ok "Build complete."
       return 0
     else
