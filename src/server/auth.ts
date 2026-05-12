@@ -63,7 +63,7 @@ export const auth = betterAuth({
           return {
             data: {
               ...newUser,
-              role: existingCount === 0 ? 'admin' : 'user',
+              role: Number(existingCount) === 0 ? 'admin' : 'user',
               status: 'active',
             },
           }
