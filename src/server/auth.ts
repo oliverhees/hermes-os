@@ -4,7 +4,6 @@ import { twoFactor } from 'better-auth/plugins'
 import { db } from './db'
 import { user } from './db/schema'
 import { getSystemConfig } from './db/config'
-import { encrypt, decrypt, isEncrypted } from './db/encryption'
 import { audit } from './db/audit'
 import { count } from 'drizzle-orm'
 
@@ -23,23 +22,6 @@ export const auth = betterAuth({
       otpOptions: {
         digits: 6,
         period: 30,
-      },
-      schema: {
-        twoFactor: {
-          fields: {
-            secret: {
-              type: 'string',
-              transform: {
-                input: (val: string) => JSON.stringify(encrypt(val)),
-                output: (val: string) => {
-                  const parsed = JSON.parse(val)
-                  if (isEncrypted(parsed)) return decrypt(parsed)
-                  return val
-                },
-              },
-            },
-          },
-        },
       },
     }),
   ],
