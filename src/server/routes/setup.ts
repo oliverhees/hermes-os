@@ -40,7 +40,7 @@ router.post('/probe-models', async (req, res) => {
     return res.status(400).json({ error: 'invalid_base_url' })
   }
 
-  const cleanUrl = baseUrl.replace(/\/$/, '')
+  const cleanUrl = baseUrl.replace(/\/v1\/?$/, '').replace(/\/$/, '')
   try {
     const response = await fetch(`${cleanUrl}/v1/models`, {
       headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},

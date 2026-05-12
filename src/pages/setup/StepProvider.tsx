@@ -116,7 +116,7 @@ export function StepProvider({ onNext }: StepProviderProps) {
             <Input
               value={baseUrl}
               onChange={(e) => { setBaseUrl(e.target.value); setAvailableModels(null) }}
-              placeholder="https://api.trooper.ai"
+              placeholder="https://api.trooper.ai  (ohne /v1)"
               required
             />
           </div>
