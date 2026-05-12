@@ -13,7 +13,7 @@ import { StepDone } from './StepDone'
 export function SetupWizard() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { status } = useSetupStatus()
+  const { status, refresh } = useSetupStatus()
   const { data: session } = useSession()
 
   const currentStep = ((location.search as Record<string, string>).step) || 'domain'
@@ -33,6 +33,7 @@ export function SetupWizard() {
   ]
 
   function navigateToStep(step: string) {
+    refresh()
     navigate({ to: '/setup', search: { step } as any })
   }
 
