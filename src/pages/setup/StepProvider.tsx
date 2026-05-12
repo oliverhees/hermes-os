@@ -47,6 +47,7 @@ export function StepProvider({ onNext }: StepProviderProps) {
       const result = await setupApi.probeModels(baseUrl, apiKey)
       setAvailableModels(result.models)
     } catch (err: any) {
+      if (err.body?.error === 'setup_already_completed') { onNext(); return }
       setProbeError(err.body?.detail ?? err.body?.error ?? err.message)
     } finally {
       setProbeLoading(false)
@@ -70,6 +71,7 @@ export function StepProvider({ onNext }: StepProviderProps) {
       )
       onNext()
     } catch (err: any) {
+      if (err.body?.error === 'setup_already_completed') { onNext(); return }
       setError(err.body?.error ?? err.message)
     } finally {
       setLoading(false)

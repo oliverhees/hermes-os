@@ -31,6 +31,7 @@ export function StepDomain({ onNext }: StepDomainProps) {
       await setupApi.setDomain(domain, true)
       onNext()
     } catch (err: any) {
+      if (err.body?.error === 'setup_already_completed') { onNext(); return }
       setError(err.body?.hint || err.message)
     } finally {
       setLoading(false)
