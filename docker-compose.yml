@@ -101,6 +101,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+      - /usr/local/etc/haproxy
     cap_drop: [ALL]
     cap_add: [CHOWN, SETGID, SETUID]
     security_opt:
