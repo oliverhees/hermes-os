@@ -19,7 +19,7 @@ export function AppGate({ children }: { children: React.ReactNode }) {
     const isSetupPath = path.startsWith('/setup')
     const isAuthPath = path === '/login' || path === '/login/2fa'
 
-    if (!setupComplete) {
+    if (status !== null && !setupComplete) {
       if (!isSetupPath) navigate({ to: '/setup' }, { replace: true })
       return
     }
