@@ -127,7 +127,8 @@ services:
       context: .
       target: runtime
     restart: unless-stopped
-    networks: [internal]
+    networks: [edge, internal]
+    dns: [8.8.8.8, 1.1.1.1]
     depends_on:
       postgres:
         condition: service_healthy
