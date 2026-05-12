@@ -10,9 +10,6 @@ export async function setupGate(req: Request, res: Response, next: NextFunction)
   const isSetupPath = req.path.startsWith('/api/setup') || req.path === '/setup' || req.path.startsWith('/setup/')
 
   if (isSetupPath) {
-    if (setupComplete) {
-      return res.status(403).json({ error: 'setup_already_completed' })
-    }
     return next()
   }
 
