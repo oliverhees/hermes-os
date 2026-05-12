@@ -14,6 +14,7 @@ type Screen =
   | 'forgejo-connect'
   | 'forgejo-provision'
   | 'vault-mode'
+  | 'vault-name'
   | 'vault-connect'
   | 'vault-create'
 
@@ -126,6 +127,10 @@ export function StepVault({ onNext }: StepVaultProps) {
   const [forgejoUrl, setForgejoUrl] = useState('')
   const [apiToken, setApiToken] = useState('')
   const [vaultRepo, setVaultRepo] = useState('')
+  const [newRepoName, setNewRepoName] = useState('paione-vault')
+  const [checkLoading, setCheckLoading] = useState(false)
+  const [checkError, setCheckError] = useState<string | null>(null)
+  const [repoExistsWarning, setRepoExistsWarning] = useState(false)
 
   const [provisionLoading, setProvisionLoading] = useState(false)
   const [provisionError, setProvisionError] = useState<string | null>(null)
@@ -181,7 +186,7 @@ export function StepVault({ onNext }: StepVaultProps) {
     setSaveError(null)
     ;(async () => {
       try {
-        const result = await setupApi.createVault(forgejoUrl, apiToken)
+        const result = await setupApi.createVault(forgejoUrl, apiToken, newRepoName)
         if (cancelled) return
         setVaultResult({ repoUrl: result.repoUrl, repoName: result.repoName })
         // After successful creation, save the vault config
@@ -206,7 +211,7 @@ export function StepVault({ onNext }: StepVaultProps) {
     return () => {
       cancelled = true
     }
-  }, [screen, vaultAttempt, forgejoUrl, apiToken, onNext])
+  }, [screen, vaultAttempt, forgejoUrl, apiToken, newRepoName, onNext])
 
   function selectForgejoMode(id: Exclude<ForgejoMode, null>) {
     setForgejoMode(id)
@@ -222,7 +227,7 @@ export function StepVault({ onNext }: StepVaultProps) {
     if (id === 'existing') {
       setScreen('vault-connect')
     } else {
-      setScreen('vault-create')
+      setScreen('vault-name')
     }
   }
 
@@ -237,6 +242,25 @@ export function StepVault({ onNext }: StepVaultProps) {
       setScreen('forgejo-provision')
     } else {
       setScreen('forgejo-connect')
+    }
+  }
+
+  async function submitVaultName(e: React.FormEvent) {
+    e.preventDefault()
+    setCheckError(null)
+    setRepoExistsWarning(false)
+    setCheckLoading(true)
+    try {
+      const result = await setupApi.checkVault(forgejoUrl, apiToken, newRepoName.trim())
+      if (result.exists) {
+        setRepoExistsWarning(true)
+      } else {
+        setScreen('vault-create')
+      }
+    } catch (err) {
+      setCheckError(extractErrorMessage(err))
+    } finally {
+      setCheckLoading(false)
     }
   }
 
@@ -405,6 +429,79 @@ export function StepVault({ onNext }: StepVaultProps) {
       <StepCard title="Starter Vault" description="Hast du bereits ein Vault-Repo auf Forgejo?">
         <BackLink onClick={goBackToPreviousForgejoScreen} />
         <TileGrid options={VAULT_MODES} onSelect={selectVaultMode} />
+      </StepCard>
+    )
+  }
+
+  if (screen === 'vault-name') {
+    return (
+      <StepCard title="Vault erstellen" description="Wie soll dein neues Vault-Repo heißen?">
+        <BackLink onClick={() => setScreen('vault-mode')} />
+        <form onSubmit={submitVaultName} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1.5 text-primary-900 dark:text-zinc-300">
+              Repo Name
+            </label>
+            <Input
+              value={newRepoName}
+              onChange={(e) => {
+                setNewRepoName(e.target.value)
+                setRepoExistsWarning(false)
+                setSaveError(null)
+              }}
+              placeholder="paione-vault"
+              required
+            />
+            <p className="text-xs text-primary-500 mt-1">
+              Wird von{' '}
+              <code className="bg-primary-100 dark:bg-zinc-800 px-1 rounded">
+                github.com/oliverhees/paione-vault
+              </code>{' '}
+              geklont.
+            </p>
+          </div>
+
+          {repoExistsWarning && (
+            <div className="rounded-md border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-3 text-sm space-y-2">
+              <p className="font-medium text-amber-800 dark:text-amber-300">
+                Repo «{newRepoName}» existiert bereits auf Forgejo.
+              </p>
+              <p className="text-amber-700 dark:text-amber-400">
+                Du kannst es direkt verwenden oder einen anderen Namen wählen.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saveLoading}
+                onClick={async () => {
+                  setSaveError(null)
+                  setSaveLoading(true)
+                  try {
+                    await setupApi.setVault(forgejoUrl, apiToken, newRepoName.trim())
+                    onNext()
+                  } catch (err) {
+                    setSaveError(extractErrorMessage(err))
+                  } finally {
+                    setSaveLoading(false)
+                  }
+                }}
+              >
+                {saveLoading ? 'Speichern…' : `«${newRepoName}» verwenden`}
+              </Button>
+              {saveError && <FormError message={saveError} />}
+            </div>
+          )}
+
+          {checkError && <FormError message={checkError} />}
+
+          {!repoExistsWarning && (
+            <div className="flex justify-end pt-4">
+              <Button type="submit" disabled={checkLoading || !newRepoName.trim()}>
+                {checkLoading ? 'Prüfe…' : 'Weiter →'}
+              </Button>
+            </div>
+          )}
+        </form>
       </StepCard>
     )
   }

@@ -277,47 +277,50 @@ async function getAuthenticatedUser(forgejoUrl: string, apiToken: string): Promi
   return data.login
 }
 
+export async function vaultExists(forgejoUrl: string, apiToken: string, repoName: string): Promise<boolean> {
+  const username = await getAuthenticatedUser(forgejoUrl, apiToken)
+  const res = await fetch(`${forgejoUrl}/api/v1/repos/${username}/${repoName}`, {
+    headers: { Authorization: `token ${apiToken}` },
+  })
+  return res.status === 200
+}
+
 export async function createStarterVault(
   forgejoUrl: string,
   apiToken: string,
-  repoName = 'hermes-starter-vault',
+  repoName = 'paione-vault',
 ): Promise<{ repoUrl: string; repoName: string }> {
   const username = await getAuthenticatedUser(forgejoUrl, apiToken)
 
-  const createRes = await fetch(`${forgejoUrl}/api/v1/user/repos`, {
+  const existsRes = await fetch(`${forgejoUrl}/api/v1/repos/${username}/${repoName}`, {
+    headers: { Authorization: `token ${apiToken}` },
+  })
+  if (existsRes.status === 200) {
+    const data = (await existsRes.json()) as ForgejoRepoResponse
+    return { repoUrl: data.html_url, repoName: data.name }
+  }
+
+  const migrateRes = await fetch(`${forgejoUrl}/api/v1/repos/migrate`, {
     method: 'POST',
     headers: {
       Authorization: `token ${apiToken}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      name: repoName,
-      description: 'Hermes OS starter vault',
+      clone_addr: 'https://github.com/oliverhees/paione-vault',
+      repo_name: repoName,
+      repo_owner: username,
+      mirror: false,
       private: false,
-      auto_init: true,
+      description: 'Hermes OS starter vault',
     }),
   })
 
-  if (createRes.status === 201) {
-    const data = (await createRes.json()) as ForgejoRepoResponse
-    return { repoUrl: data.html_url, repoName: data.name }
+  if (!migrateRes.ok) {
+    const detail = await migrateRes.text().catch(() => '')
+    throw new Error(`Forgejo migrate failed (${migrateRes.status}): ${detail}`)
   }
 
-  if (createRes.status === 409) {
-    const getRes = await fetch(
-      `${forgejoUrl}/api/v1/repos/${username}/${repoName}`,
-      {
-        headers: { Authorization: `token ${apiToken}` },
-      },
-    )
-    if (!getRes.ok) {
-      const detail = await getRes.text().catch(() => '')
-      throw new Error(`Forgejo repo lookup failed (${getRes.status}): ${detail}`)
-    }
-    const data = (await getRes.json()) as ForgejoRepoResponse
-    return { repoUrl: data.html_url, repoName: data.name }
-  }
-
-  const detail = await createRes.text().catch(() => '')
-  throw new Error(`Forgejo repo create failed (${createRes.status}): ${detail}`)
+  const data = (await migrateRes.json()) as ForgejoRepoResponse
+  return { repoUrl: data.html_url, repoName: data.name }
 }

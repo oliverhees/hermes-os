@@ -59,6 +59,10 @@ export const setupApi = {
       method: 'POST',
       body: JSON.stringify({ forgejoUrl, apiToken, repoName }),
     }),
+  checkVault: (forgejoUrl: string, apiToken: string, repoName: string) =>
+    request<{ exists: boolean }>(
+      `/api/setup/check-vault?${new URLSearchParams({ forgejoUrl, apiToken, repoName })}`,
+    ),
   finalize: () =>
     request<{ ok: true; redirect: string }>('/api/setup/finalize', { method: 'POST' }),
 }

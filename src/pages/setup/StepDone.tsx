@@ -21,6 +21,10 @@ export function StepDone() {
       await setupApi.finalize()
       await refresh()
     } catch (err: any) {
+      if (err.body?.error === 'setup_already_completed') {
+        await refresh()
+        return
+      }
       setError(err.body?.error ?? err.message)
     } finally {
       setLoading(false)

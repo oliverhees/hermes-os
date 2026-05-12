@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { setSystemConfig, getSystemConfig } from '../db/config'
 import { canFinalizeSetup } from '../middleware/setup-gate'
 import { isValidDomain, verifyDomainDns } from '../services/domain'
-import { provisionForgejo, createStarterVault } from '../services/forgejo-provisioner'
+import { provisionForgejo, createStarterVault, vaultExists } from '../services/forgejo-provisioner'
 import { audit } from '../db/audit'
 
 const router = Router()
@@ -105,6 +105,19 @@ router.post('/provision-forgejo', async (req, res) => {
     res.json({ ok: true, ...result })
   } catch (err: any) {
     res.status(500).json({ error: 'provision_failed', detail: err.message })
+  }
+})
+
+router.get('/check-vault', async (req, res) => {
+  const { forgejoUrl, apiToken, repoName } = req.query as Record<string, string>
+  if (!forgejoUrl || !apiToken || !repoName) {
+    return res.status(400).json({ error: 'missing_fields' })
+  }
+  try {
+    const exists = await vaultExists(forgejoUrl, apiToken, repoName)
+    res.json({ exists })
+  } catch (err: any) {
+    res.status(400).json({ error: 'check_failed', detail: err.message })
   }
 })
 
