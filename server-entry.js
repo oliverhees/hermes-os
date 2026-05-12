@@ -111,7 +111,8 @@ async function requestHandler(req, res) {
 
   // Express owns: better-auth, setup, admin — body not yet read, pass through directly
   if (
-    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/auth/') ||
+    pathname === '/api/auth' ||
     pathname.startsWith('/api/setup') ||
     pathname.startsWith('/api/admin')
   ) {
