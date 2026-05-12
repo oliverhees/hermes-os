@@ -16,8 +16,7 @@ export function SetupWizard() {
   const { status } = useSetupStatus()
   const { data: session } = useSession()
 
-  const pathSegments = location.pathname.replace(/^\/setup\//, '').split('/')
-  const currentStep = pathSegments[0] || 'domain'
+  const currentStep = ((location.search as Record<string, string>).step) || 'domain'
 
   const steps: WizardStep[] = [
     { id: 'domain', label: 'Domain', done: !!status?.domain, current: currentStep === 'domain' },
