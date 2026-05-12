@@ -97,10 +97,53 @@ async function tryServeStatic(req, res) {
   }
 }
 
+let tanstackServer = null
+
+function getTanstackServer() {
+  if (!tanstackServer) {
+    tanstackServer = require('./dist/server/server.js').default
+  }
+  return tanstackServer
+}
+
 async function requestHandler(req, res) {
   if (req.method === 'GET' || req.method === 'HEAD') {
     const served = await tryServeStatic(req, res)
     if (served) return
+
+    const url = new URL(req.url, `http://${req.headers.host}`)
+    const pathname = url.pathname
+
+    if (!pathname.startsWith('/api/')) {
+      try {
+        const server = getTanstackServer()
+        const headers = new Headers()
+        for (const [key, value] of Object.entries(req.headers)) {
+          if (typeof value === 'string') {
+            headers.set(key, value)
+          }
+        }
+
+        const request = new Request(url, {
+          method: req.method,
+          headers,
+          redirect: 'follow',
+        })
+
+        const response = await server.fetch(request)
+
+        res.statusCode = response.status
+        response.headers.forEach((value, key) => {
+          res.setHeader(key, value)
+        })
+
+        const body = await response.text()
+        res.end(body)
+        return
+      } catch (err) {
+        console.error('TanStack server error:', err)
+      }
+    }
   }
 
   app(req, res)
