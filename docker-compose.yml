@@ -137,6 +137,8 @@ services:
       NODE_ENV: production
       PORT: 3000
       DOCKER_HOST: tcp://socket-proxy:2375
+      HERMES_API_URL: http://hermes-agent:8642
+      HERMES_API_TOKEN: ${HERMES_AGENT_KEY}
       PUBLIC_IP: ${PUBLIC_IP}
       DOMAIN: ${DOMAIN}
       BETTER_AUTH_URL: https://${DOMAIN:-hermesos.paione.de}
@@ -169,3 +171,4 @@ services:
     environment:
       API_SERVER_ENABLED: "true"
       API_SERVER_HOST: 0.0.0.0
+      API_SERVER_KEY: ${HERMES_AGENT_KEY}
