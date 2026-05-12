@@ -24,13 +24,6 @@ app.use(setupGate)
 app.use('/api/setup', setupRouter)
 app.use('/api/admin', adminRouter)
 
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'not_found' })
-  }
-  next()
-})
-
 const MIME_TYPES = {
   '.js': 'application/javascript',
   '.mjs': 'application/javascript',
@@ -107,46 +100,80 @@ function getTanstackServer() {
 }
 
 async function requestHandler(req, res) {
+  const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
+  const pathname = url.pathname
+
+  // Static assets: serve directly (GET/HEAD only)
   if (req.method === 'GET' || req.method === 'HEAD') {
     const served = await tryServeStatic(req, res)
     if (served) return
-
-    const url = new URL(req.url, `http://${req.headers.host}`)
-    const pathname = url.pathname
-
-    if (!pathname.startsWith('/api/')) {
-      try {
-        const server = getTanstackServer()
-        const headers = new Headers()
-        for (const [key, value] of Object.entries(req.headers)) {
-          if (typeof value === 'string') {
-            headers.set(key, value)
-          }
-        }
-
-        const request = new Request(url, {
-          method: req.method,
-          headers,
-          redirect: 'follow',
-        })
-
-        const response = await server.fetch(request)
-
-        res.statusCode = response.status
-        response.headers.forEach((value, key) => {
-          res.setHeader(key, value)
-        })
-
-        const body = await response.text()
-        res.end(body)
-        return
-      } catch (err) {
-        console.error('TanStack server error:', err)
-      }
-    }
   }
 
-  app(req, res)
+  // Express owns: better-auth, setup, admin — body not yet read, pass through directly
+  if (
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/setup') ||
+    pathname.startsWith('/api/admin')
+  ) {
+    app(req, res)
+    return
+  }
+
+  // TanStack handles everything else: all frontend routes + all other /api/* routes
+  try {
+    const server = getTanstackServer()
+
+    const headers = new Headers()
+    for (const [key, value] of Object.entries(req.headers)) {
+      if (typeof value === 'string') headers.set(key, value)
+      else if (Array.isArray(value)) value.forEach(v => headers.append(key, v))
+    }
+
+    let bodyInit
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      bodyInit = await new Promise((resolve, reject) => {
+        const chunks = []
+        req.on('data', c => chunks.push(c))
+        req.on('end', () => resolve(Buffer.concat(chunks)))
+        req.on('error', reject)
+      })
+    }
+
+    const request = new Request(url.toString(), {
+      method: req.method,
+      headers,
+      body: bodyInit && bodyInit.length ? bodyInit : undefined,
+    })
+
+    const response = await server.fetch(request)
+
+    res.statusCode = response.status
+    response.headers.forEach((value, key) => {
+      if (key.toLowerCase() !== 'transfer-encoding') res.setHeader(key, value)
+    })
+
+    if (response.body) {
+      const reader = response.body.getReader()
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          res.write(Buffer.from(value))
+        }
+      } finally {
+        res.end()
+      }
+    } else {
+      res.end()
+    }
+    return
+  } catch (err) {
+    console.error('[TanStack] Error handling request:', err)
+    if (!res.headersSent) {
+      res.statusCode = 500
+      res.end(JSON.stringify({ error: 'internal_error' }))
+    }
+  }
 }
 
 const httpServer = createServer(requestHandler)
