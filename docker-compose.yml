@@ -159,6 +159,7 @@ services:
 
   hermes-agent:
     image: nousresearch/hermes-agent:latest
+    command: gateway run
     restart: unless-stopped
     stdin_open: true
     tty: true
