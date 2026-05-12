@@ -160,6 +160,8 @@ services:
   hermes-agent:
     image: nousresearch/hermes-agent:latest
     restart: unless-stopped
+    stdin_open: true
+    tty: true
     networks: [internal]
     volumes:
       - hermes_agent_data:/opt/data
