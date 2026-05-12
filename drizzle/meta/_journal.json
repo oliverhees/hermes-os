@@ -15,6 +15,13 @@
       "when": 1778573538412,
       "tag": "0001_talented_ink",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778574076241,
+      "tag": "0002_giant_paibok",
+      "breakpoints": true
     }
   ]
 }

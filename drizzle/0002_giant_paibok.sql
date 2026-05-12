@@ -1,0 +1,1 @@
+ALTER TABLE "twoFactor" ADD COLUMN "verified" boolean DEFAULT true;

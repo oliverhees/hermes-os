@@ -63,6 +63,7 @@ export const twoFactor = pgTable('twoFactor', {
   userId: text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
   secret: text('secret').notNull(),
   backupCodes: text('backupCodes').notNull(),
+  verified: boolean('verified').default(true),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
 
