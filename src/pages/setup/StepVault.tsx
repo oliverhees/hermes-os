@@ -324,8 +324,8 @@ export function StepVault({ onNext }: StepVaultProps) {
               minLength={20}
             />
             <p className="text-xs text-primary-500 mt-1">
-              Token benötigt <code className="bg-primary-100 dark:bg-zinc-800 px-1 rounded">repo</code> +{' '}
-              <code className="bg-primary-100 dark:bg-zinc-800 px-1 rounded">user:read</code> Scopes. Wird verschlüsselt
+              Token benötigt <code className="bg-primary-100 dark:bg-zinc-800 px-1 rounded">write:repository</code> +{' '}
+              <code className="bg-primary-100 dark:bg-zinc-800 px-1 rounded">write:user</code> Scopes. Wird verschlüsselt
               gespeichert.
             </p>
           </div>
