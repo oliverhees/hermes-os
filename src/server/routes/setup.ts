@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { setSystemConfig, getSystemConfig } from '../db/config'
 import { canFinalizeSetup } from '../middleware/setup-gate'
 import { isValidDomain, verifyDomainDns } from '../services/domain'
+import { provisionForgejo, createStarterVault } from '../services/forgejo-provisioner'
 import { audit } from '../db/audit'
 
 const router = Router()
@@ -82,7 +83,7 @@ router.post('/provider', async (req, res) => {
 })
 
 router.post('/vault', async (req, res) => {
-  const { forgejoUrl, apiToken } = req.body ?? {}
+  const { forgejoUrl, apiToken, vaultRepo } = req.body ?? {}
   if (!forgejoUrl || !/^https?:\/\//.test(forgejoUrl)) {
     return res.status(400).json({ error: 'invalid_forgejo_url' })
   }
@@ -92,9 +93,32 @@ router.post('/vault', async (req, res) => {
 
   await setSystemConfig('vault_forgejo_url', forgejoUrl)
   await setSystemConfig('forgejo_api_token', apiToken)
+  await setSystemConfig('vault_repo', vaultRepo ?? null)
   await audit({ action: 'setup.vault_configured', target: forgejoUrl, req })
 
   res.json({ ok: true, next: '/api/setup/finalize' })
+})
+
+router.post('/provision-forgejo', async (req, res) => {
+  try {
+    const result = await provisionForgejo()
+    res.json({ ok: true, ...result })
+  } catch (err: any) {
+    res.status(500).json({ error: 'provision_failed', detail: err.message })
+  }
+})
+
+router.post('/create-vault', async (req, res) => {
+  const { forgejoUrl, apiToken, repoName } = req.body ?? {}
+  if (!forgejoUrl || !apiToken) {
+    return res.status(400).json({ error: 'missing_fields' })
+  }
+  try {
+    const result = await createStarterVault(forgejoUrl, apiToken, repoName)
+    res.json({ ok: true, ...result })
+  } catch (err: any) {
+    res.status(400).json({ error: 'vault_creation_failed', detail: err.message })
+  }
 })
 
 router.post('/finalize', async (req, res) => {

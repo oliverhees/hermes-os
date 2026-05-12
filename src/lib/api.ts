@@ -44,10 +44,20 @@ export const setupApi = {
       method: 'POST',
       body: JSON.stringify({ provider, apiKey, model, baseUrl }),
     }),
-  setVault: (forgejoUrl: string, apiToken: string) =>
+  setVault: (forgejoUrl: string, apiToken: string, vaultRepo?: string) =>
     request<{ ok: true }>('/api/setup/vault', {
       method: 'POST',
-      body: JSON.stringify({ forgejoUrl, apiToken }),
+      body: JSON.stringify({ forgejoUrl, apiToken, vaultRepo }),
+    }),
+  provisionForgejo: () =>
+    request<{ ok: true; url: string; adminUser: string; adminPassword: string; apiToken: string }>(
+      '/api/setup/provision-forgejo',
+      { method: 'POST' }
+    ),
+  createVault: (forgejoUrl: string, apiToken: string, repoName?: string) =>
+    request<{ ok: true; repoUrl: string; repoName: string }>('/api/setup/create-vault', {
+      method: 'POST',
+      body: JSON.stringify({ forgejoUrl, apiToken, repoName }),
     }),
   finalize: () =>
     request<{ ok: true; redirect: string }>('/api/setup/finalize', { method: 'POST' }),
