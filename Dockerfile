@@ -25,9 +25,9 @@ RUN echo "approve-builds=true" > .npmrc && pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
 
-# Bundle server-entry.js (ESM/TypeScript) to plain CommonJS so Node can run it directly
+# Bundle server-entry.js (ESM/TypeScript) (ESM/TypeScript) to plain CommonJS so Node can run it directly
 RUN pnpm exec esbuild server-entry.js --bundle --platform=node --format=cjs --outfile=server-entry.cjs \
-    --external:dotenv/config --external:express --external:better-auth/node
+    --external:dotenv/config --external:express --external:better-auth/node --external:./dist/server/server.js
 
 # ─── migrator stage ─────────────────────────────────────────────────────
 FROM node:22-slim AS migrator
@@ -72,4 +72,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD curl -fsS http://127.0.0.1:3000/ >/dev/null || exit 1
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["node", "--max-old-space-size=2048", "server-entry.js"]
+CMD ["node", "--max-old-space-size=2048", "server-entry.cjs"]
