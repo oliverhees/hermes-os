@@ -47,7 +47,10 @@ router.post('/probe-models', async (req, res) => {
       signal: AbortSignal.timeout(10_000),
     })
     if (!response.ok) {
-      return res.status(400).json({ error: 'probe_failed', status: response.status })
+      const detail = response.status === 401 || response.status === 403
+        ? 'Authentication failed — check your API key'
+        : `Server returned HTTP ${response.status}`
+      return res.status(400).json({ error: 'probe_failed', status: response.status, detail })
     }
     const data = await response.json() as { data?: Array<{ id: string }> }
     const models = data.data?.map((m: { id: string }) => m.id) ?? []
