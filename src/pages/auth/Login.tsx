@@ -18,12 +18,13 @@ export function Login() {
     setLoading(true)
     try {
       const { data, error } = await signIn.email({ email, password })
-      if (error) throw new Error(error.message)
+      if (error) throw new Error(error.message ?? 'Sign-in failed')
       if ((data as any)?.twoFactorRedirect) {
         navigate({ to: '/login/2fa' })
         return
       }
-      navigate({ to: '/' })
+      // Hard reload so the session cookie is picked up before AppGate fires
+      window.location.replace('/')
     } catch (err: any) {
       setError(err.message ?? 'Sign-in failed')
     } finally {

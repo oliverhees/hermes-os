@@ -19,8 +19,9 @@ export function TwoFactorChallenge() {
     try {
       const fn = useBackup ? twoFactor.verifyBackupCode : twoFactor.verifyTotp
       const { error } = await fn({ code })
-      if (error) throw new Error(error.message)
-      navigate({ to: '/' })
+      if (error) throw new Error(error.message ?? 'Verification failed')
+      // Hard reload so the session cookie is picked up before AppGate fires
+      window.location.replace('/')
     } catch (err: any) {
       setError(err.message ?? 'Invalid code')
     } finally {
