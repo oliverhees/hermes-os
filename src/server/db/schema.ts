@@ -7,6 +7,7 @@ export const user = pgTable('user', {
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
   emailVerified: boolean('emailVerified').notNull().default(false),
+  twoFactorEnabled: boolean('twoFactorEnabled').notNull().default(false),
   image: text('image'),
   role: text('role').notNull().default('user').$type<'admin' | 'user'>(),
   hermesContainerName: text('hermes_container_name').unique(),
