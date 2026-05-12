@@ -34,17 +34,44 @@ router.post('/domain', async (req, res) => {
   res.json({ ok: true, domain, next: '/api/auth/sign-up/email' })
 })
 
+router.post('/probe-models', async (req, res) => {
+  const { baseUrl, apiKey } = req.body ?? {}
+  if (!baseUrl || typeof baseUrl !== 'string' || !/^https?:\/\//.test(baseUrl)) {
+    return res.status(400).json({ error: 'invalid_base_url' })
+  }
+
+  const cleanUrl = baseUrl.replace(/\/$/, '')
+  try {
+    const response = await fetch(`${cleanUrl}/v1/models`, {
+      headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!response.ok) {
+      return res.status(400).json({ error: 'probe_failed', status: response.status })
+    }
+    const data = await response.json() as { data?: Array<{ id: string }> }
+    const models = data.data?.map((m: { id: string }) => m.id) ?? []
+    res.json({ ok: true, models })
+  } catch (err: any) {
+    res.status(400).json({ error: 'probe_failed', detail: err.message })
+  }
+})
+
 router.post('/provider', async (req, res) => {
-  const { provider, apiKey, model } = req.body ?? {}
-  const allowed = ['anthropic', 'openai', 'openrouter', 'google', 'ollama']
+  const { provider, apiKey, model, baseUrl } = req.body ?? {}
+  const allowed = ['anthropic', 'openai', 'openrouter', 'google', 'ollama', 'custom']
   if (!allowed.includes(provider)) {
     return res.status(400).json({ error: 'invalid_provider' })
   }
-  if (provider !== 'ollama' && (!apiKey || typeof apiKey !== 'string' || apiKey.length < 20)) {
+  const needsKey = provider !== 'ollama' && provider !== 'custom'
+  if (needsKey && (!apiKey || typeof apiKey !== 'string' || apiKey.length < 20)) {
     return res.status(400).json({ error: 'invalid_api_key' })
   }
+  if (provider === 'custom' && (!baseUrl || typeof baseUrl !== 'string' || !/^https?:\/\//.test(baseUrl))) {
+    return res.status(400).json({ error: 'invalid_base_url' })
+  }
 
-  await setSystemConfig('llm_provider', { provider, model: model ?? null })
+  await setSystemConfig('llm_provider', { provider, model: model ?? null, baseUrl: baseUrl ?? null })
   await setSystemConfig('llm_provider_api_key', apiKey ?? null)
   await audit({ action: 'setup.provider_configured', target: provider, req })
 

@@ -34,10 +34,15 @@ export const setupApi = {
       method: 'POST',
       body: JSON.stringify({ domain, skipDnsCheck }),
     }),
-  setProvider: (provider: string, apiKey: string, model?: string) =>
+  probeModels: (baseUrl: string, apiKey: string) =>
+    request<{ ok: true; models: string[] }>('/api/setup/probe-models', {
+      method: 'POST',
+      body: JSON.stringify({ baseUrl, apiKey }),
+    }),
+  setProvider: (provider: string, apiKey: string, model?: string, baseUrl?: string) =>
     request<{ ok: true }>('/api/setup/provider', {
       method: 'POST',
-      body: JSON.stringify({ provider, apiKey, model }),
+      body: JSON.stringify({ provider, apiKey, model, baseUrl }),
     }),
   setVault: (forgejoUrl: string, apiToken: string) =>
     request<{ ok: true }>('/api/setup/vault', {
