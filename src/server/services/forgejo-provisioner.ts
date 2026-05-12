@@ -265,11 +265,25 @@ export async function provisionForgejo(): Promise<{
   }
 }
 
+async function getAuthenticatedUser(forgejoUrl: string, apiToken: string): Promise<string> {
+  const res = await fetch(`${forgejoUrl}/api/v1/user`, {
+    headers: { Authorization: `token ${apiToken}` },
+  })
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(`Forgejo user lookup failed (${res.status}): ${detail}`)
+  }
+  const data = (await res.json()) as { login: string }
+  return data.login
+}
+
 export async function createStarterVault(
   forgejoUrl: string,
   apiToken: string,
   repoName = 'hermes-starter-vault',
 ): Promise<{ repoUrl: string; repoName: string }> {
+  const username = await getAuthenticatedUser(forgejoUrl, apiToken)
+
   const createRes = await fetch(`${forgejoUrl}/api/v1/user/repos`, {
     method: 'POST',
     headers: {
@@ -291,7 +305,7 @@ export async function createStarterVault(
 
   if (createRes.status === 409) {
     const getRes = await fetch(
-      `${forgejoUrl}/api/v1/repos/${ADMIN_USER}/${repoName}`,
+      `${forgejoUrl}/api/v1/repos/${username}/${repoName}`,
       {
         headers: { Authorization: `token ${apiToken}` },
       },
