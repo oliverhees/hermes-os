@@ -65,6 +65,10 @@ export const setupApi = {
     ),
   finalize: () =>
     request<{ ok: true; redirect: string }>('/api/setup/finalize', { method: 'POST' }),
+  agentStatus: () =>
+    request<{ running: boolean; status: string }>('/api/setup/agent-status'),
+  startAgent: () =>
+    request<{ ok: boolean; message: string }>('/api/setup/start-agent', { method: 'POST' }),
 }
 
 export type SetupStatus = {

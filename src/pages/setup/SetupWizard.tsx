@@ -8,6 +8,7 @@ import { StepAdmin } from './StepAdmin'
 import { StepTwoFactor } from './StepTwoFactor'
 import { StepProvider } from './StepProvider'
 import { StepVault } from './StepVault'
+import { StepAgent } from './StepAgent'
 import { StepDone } from './StepDone'
 
 export function SetupWizard() {
@@ -29,6 +30,7 @@ export function SetupWizard() {
     },
     { id: 'provider', label: 'LLM Provider', done: !!status?.provider, current: currentStep === 'provider' },
     { id: 'vault', label: 'Forgejo Vault', done: !!status?.vault, current: currentStep === 'vault' },
+    { id: 'agent', label: 'Hermes Agent', done: currentStep === 'done', current: currentStep === 'agent' },
     { id: 'done', label: 'Finish', done: !!status?.completed, current: currentStep === 'done' },
   ]
 
@@ -53,7 +55,10 @@ export function SetupWizard() {
       content = <StepProvider onNext={() => navigateToStep('vault')} />
       break
     case 'vault':
-      content = <StepVault onNext={() => navigateToStep('done')} />
+      content = <StepVault onNext={() => navigateToStep('agent')} />
+      break
+    case 'agent':
+      content = <StepAgent onNext={() => navigateToStep('done')} />
       break
     case 'done':
       content = <StepDone />
