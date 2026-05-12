@@ -8,6 +8,13 @@
       "when": 1778510290294,
       "tag": "0000_nasty_shadow_king",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778573538412,
+      "tag": "0001_talented_ink",
+      "breakpoints": true
     }
   ]
 }
