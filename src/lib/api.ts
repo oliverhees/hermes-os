@@ -29,10 +29,10 @@ export class ApiError extends Error {
 export const setupApi = {
   status: () => request<SetupStatus>('/api/setup/status'),
   bootstrap: () => request<{ domain: string | null; publicIp: string | null }>('/api/setup/bootstrap'),
-  setDomain: (domain: string) =>
+  setDomain: (domain: string, skipDnsCheck = false) =>
     request<{ ok: true; domain: string }>('/api/setup/domain', {
       method: 'POST',
-      body: JSON.stringify({ domain }),
+      body: JSON.stringify({ domain, skipDnsCheck }),
     }),
   setProvider: (provider: string, apiKey: string, model?: string) =>
     request<{ ok: true }>('/api/setup/provider', {

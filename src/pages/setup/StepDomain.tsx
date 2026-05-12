@@ -25,7 +25,10 @@ export function StepDomain({ onNext }: StepDomainProps) {
     setError(null)
     setLoading(true)
     try {
-      await setupApi.setDomain(domain)
+      // skipDnsCheck=true: domain was already validated by the installer and
+      // the user is actively browsing from this domain — re-checking from
+      // inside the Docker container would fail due to Docker's internal DNS.
+      await setupApi.setDomain(domain, true)
       onNext()
     } catch (err: any) {
       setError(err.body?.hint || err.message)
