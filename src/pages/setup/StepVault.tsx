@@ -189,7 +189,6 @@ export function StepVault({ onNext }: StepVaultProps) {
         const result = await setupApi.createVault(forgejoUrl, apiToken, newRepoName)
         if (cancelled) return
         setVaultResult({ repoUrl: result.repoUrl, repoName: result.repoName })
-        // After successful creation, save the vault config
         setSaveLoading(true)
         try {
           await setupApi.setVault(forgejoUrl, apiToken, result.repoName)
@@ -197,12 +196,14 @@ export function StepVault({ onNext }: StepVaultProps) {
           onNext()
         } catch (saveErr) {
           if (cancelled) return
+          if (isSetupAlreadyCompleted(saveErr)) { onNext(); return }
           setSaveError(extractErrorMessage(saveErr))
         } finally {
           if (!cancelled) setSaveLoading(false)
         }
       } catch (err) {
         if (cancelled) return
+        if (isSetupAlreadyCompleted(err)) { onNext(); return }
         setVaultError(extractErrorMessage(err))
       } finally {
         if (!cancelled) setVaultLoading(false)
@@ -258,6 +259,7 @@ export function StepVault({ onNext }: StepVaultProps) {
         setScreen('vault-create')
       }
     } catch (err) {
+      if (isSetupAlreadyCompleted(err)) { onNext(); return }
       setCheckError(extractErrorMessage(err))
     } finally {
       setCheckLoading(false)
@@ -278,6 +280,7 @@ export function StepVault({ onNext }: StepVaultProps) {
       await setupApi.setVault(forgejoUrl, apiToken, vaultRepo.trim() || undefined)
       onNext()
     } catch (err) {
+      if (isSetupAlreadyCompleted(err)) { onNext(); return }
       setSaveError(extractErrorMessage(err))
     } finally {
       setSaveLoading(false)
@@ -300,6 +303,7 @@ export function StepVault({ onNext }: StepVaultProps) {
       await setupApi.setVault(forgejoUrl, apiToken, vaultResult.repoName)
       onNext()
     } catch (err) {
+      if (isSetupAlreadyCompleted(err)) { onNext(); return }
       setSaveError(extractErrorMessage(err))
     } finally {
       setSaveLoading(false)
@@ -480,6 +484,7 @@ export function StepVault({ onNext }: StepVaultProps) {
                     await setupApi.setVault(forgejoUrl, apiToken, newRepoName.trim())
                     onNext()
                   } catch (err) {
+                    if (isSetupAlreadyCompleted(err)) { onNext(); return }
                     setSaveError(extractErrorMessage(err))
                   } finally {
                     setSaveLoading(false)
@@ -598,4 +603,12 @@ function extractErrorMessage(err: unknown): string {
     if (typeof e.message === 'string') return e.message
   }
   return String(err)
+}
+
+function isSetupAlreadyCompleted(err: unknown): boolean {
+  if (err && typeof err === 'object') {
+    const e = err as { body?: { error?: unknown } }
+    return e.body?.error === 'setup_already_completed'
+  }
+  return false
 }
