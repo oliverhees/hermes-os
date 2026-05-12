@@ -6,7 +6,7 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import appCss from '../styles.css?url'
 import { SearchModal } from '@/components/search/search-modal'
 import { UsageMeter } from '@/components/usage-meter'
@@ -20,15 +20,8 @@ import { KeyboardShortcutsModal } from '@/components/keyboard-shortcuts-modal'
 import { UpdateCenterNotifier } from '@/components/update-center-notifier'
 import { initializeSettingsAppearance } from '@/hooks/use-settings'
 import { useApplyChatWidth } from '@/hooks/use-chat-settings'
-import {
-  ClaudeOnboarding,
-  ONBOARDING_COMPLETE_EVENT,
-  ONBOARDING_KEY,
-} from '@/components/onboarding/claude-onboarding'
 import { ErrorBoundary } from '@/components/error-boundary'
-import { LoginScreen } from '@/components/auth/login-screen'
-import { fetchClaudeAuthStatus, type AuthStatus } from '@/lib/claude-auth'
-import { getRootSurfaceState } from './-root-layout-state'
+import { AppGate } from '@/components/gates/AppGate'
 
 const APP_CSP = [
   "default-src 'self'",
@@ -243,64 +236,20 @@ function RootLayout() {
     pathname.startsWith('/hermes-world/') ||
     pathname === '/world' ||
     pathname.startsWith('/world/')
-  const isGameSurfaceRoute = isHermesWorldLandingRoute || pathname === '/playground' || pathname.startsWith('/playground/')
-  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(
-    null,
-  )
-  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
-  const [mounted, setMounted] = useState(false)
+  const isGameSurfaceRoute =
+    isHermesWorldLandingRoute ||
+    pathname === '/playground' ||
+    pathname.startsWith('/playground/')
+  const isSetupOrAuthRoute =
+    pathname === '/setup' ||
+    pathname.startsWith('/setup/') ||
+    pathname === '/login' ||
+    pathname.startsWith('/login/')
   useApplyChatWidth()
 
   useEffect(() => {
-    setMounted(true)
     initializeSettingsAppearance()
-
-    const syncOnboardingCompletion = () => {
-      try {
-        setOnboardingComplete(localStorage.getItem(ONBOARDING_KEY) === 'true')
-      } catch {
-        setOnboardingComplete(false)
-      }
-    }
-
-    if (typeof window === 'undefined') {
-      return undefined
-    }
-
-    syncOnboardingCompletion()
-
-    void fetch('/api/connection-status')
-      .then((res) => (res.ok ? res.json() : null))
-      .then(
-        (
-          status: {
-            ok?: boolean
-            chatReady?: boolean
-            modelConfigured?: boolean
-          } | null,
-        ) => {
-          if (status?.ok || (status?.chatReady && status?.modelConfigured)) {
-            localStorage.setItem(ONBOARDING_KEY, 'true')
-            syncOnboardingCompletion()
-          }
-        },
-      )
-      .catch(() => undefined)
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key && event.key !== ONBOARDING_KEY) return
-      syncOnboardingCompletion()
-    }
-
-    const handleOnboardingCompleteChanged = () => {
-      syncOnboardingCompletion()
-    }
-
-    window.addEventListener('storage', handleStorage)
-    window.addEventListener(
-      ONBOARDING_COMPLETE_EVENT,
-      handleOnboardingCompleteChanged,
-    )
+    if (typeof window === 'undefined') return undefined
 
     void unregisterServiceWorkers({
       serviceWorker:
@@ -308,67 +257,41 @@ function RootLayout() {
       cachesApi: 'caches' in window ? caches : undefined,
     })
 
-    return () => {
-      window.removeEventListener('storage', handleStorage)
-      window.removeEventListener(
-        ONBOARDING_COMPLETE_EVENT,
-        handleOnboardingCompleteChanged,
-      )
-    }
+    return undefined
   }, [])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined
-    let cancelled = false
-    fetchClaudeAuthStatus()
-      .then((status) => {
-        if (!cancelled) setAuthStatus(status)
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setAuthStatus({ authenticated: true, authRequired: false })
-        }
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const rootSurfaceState = getRootSurfaceState(onboardingComplete, authStatus)
 
   return (
     <QueryClientProvider client={queryClient}>
       <Toaster />
-      {mounted && rootSurfaceState.showLogin ? <LoginScreen /> : null}
-      {mounted && rootSurfaceState.showOnboarding ? <ClaudeOnboarding /> : null}
-      {rootSurfaceState.showWorkspaceShell ? (
-        <>
-          <GlobalShortcutListener />
-          <TerminalShortcutListener />
-          <WorkspaceShell>
-            <ErrorBoundary
-              className="h-full min-h-0 flex-1"
-              title="Something went wrong"
-              description="This page failed to render. Reload to try again."
-            >
-              <Outlet />
-            </ErrorBoundary>
-          </WorkspaceShell>
-          {!isHermesWorldLandingRoute ? <SearchModal /> : null}
-          {/* UsageMeter must be mounted at root so the OPEN_USAGE event from
-              the search modal's Usage tile has a listener. See #258.
-              But public launch surfaces like HermesWorld should not show app usage chrome. */}
-          {!isGameSurfaceRoute ? <UsageMeter /> : null}
-          {!isHermesWorldLandingRoute ? <KeyboardShortcutsModal /> : null}
-          {!isHermesWorldLandingRoute ? <UpdateCenterNotifier /> : null}
-          {rootSurfaceState.showPostOnboardingOverlays && !isGameSurfaceRoute ? (
-            <>
-              <MobilePromptTrigger />
-              <OnboardingTour />
-            </>
-          ) : null}
-        </>
-      ) : null}
+      <AppGate>
+        {isSetupOrAuthRoute ? (
+          <Outlet />
+        ) : (
+          <>
+            <GlobalShortcutListener />
+            <TerminalShortcutListener />
+            <WorkspaceShell>
+              <ErrorBoundary
+                className="h-full min-h-0 flex-1"
+                title="Something went wrong"
+                description="This page failed to render. Reload to try again."
+              >
+                <Outlet />
+              </ErrorBoundary>
+            </WorkspaceShell>
+            {!isHermesWorldLandingRoute ? <SearchModal /> : null}
+            {!isGameSurfaceRoute ? <UsageMeter /> : null}
+            {!isHermesWorldLandingRoute ? <KeyboardShortcutsModal /> : null}
+            {!isHermesWorldLandingRoute ? <UpdateCenterNotifier /> : null}
+            {!isGameSurfaceRoute ? (
+              <>
+                <MobilePromptTrigger />
+                <OnboardingTour />
+              </>
+            ) : null}
+          </>
+        )}
+      </AppGate>
     </QueryClientProvider>
   )
 }
