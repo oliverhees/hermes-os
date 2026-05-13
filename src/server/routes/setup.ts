@@ -381,6 +381,7 @@ router.post('/agent-wizard', async (req, res) => {
       command: ['docker', 'exec', '-it', '-e', 'PATH=/opt/hermes/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin', containerName, 'hermes', 'setup'],
       cols: 120,
       rows: 34,
+      cwd: '/tmp',
       env: { DOCKER_HOST: 'unix:///var/run/docker.sock' },
     })
 
