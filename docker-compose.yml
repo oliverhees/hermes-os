@@ -159,6 +159,11 @@ services:
         export PGSSLMODE=disable
         export ENCRYPTION_KEY="$$(cat /run/secrets/encryption_key)"
         export BETTER_AUTH_SECRET="$$(cat /run/secrets/better_auth_secret)"
+        DOCKER_GID=$$(stat -c '%g' /var/run/docker.sock 2>/dev/null || echo "")
+        if [ -n "$$DOCKER_GID" ] && [ "$$DOCKER_GID" != "0" ]; then
+          groupadd -f -g "$$DOCKER_GID" docker-socket 2>/dev/null || true
+          usermod -aG docker-socket workspace 2>/dev/null || true
+        fi
         exec /usr/bin/tini -- gosu workspace node --max-old-space-size=2048 server-entry.cjs
 
   hermes-agent:
