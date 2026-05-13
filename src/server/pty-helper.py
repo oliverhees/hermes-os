@@ -51,7 +51,10 @@ def main():
         if slave_fd > 2:
             os.close(slave_fd)
 
-        os.chdir(cwd)
+        try:
+            os.chdir(cwd)
+        except (FileNotFoundError, PermissionError):
+            os.chdir('/tmp')
         os.environ['TERM'] = 'xterm-256color'
         os.environ['COLORTERM'] = 'truecolor'
         os.execvp(command[0], command)
