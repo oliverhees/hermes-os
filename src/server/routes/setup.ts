@@ -243,6 +243,13 @@ router.post('/start-agent', async (req, res) => {
         NetworkMode: 'hermes-os_internal',
         RestartPolicy: { Name: 'unless-stopped' },
       },
+      NetworkingConfig: {
+        EndpointsConfig: {
+          'hermes-os_internal': {
+            Aliases: ['hermes-agent'],
+          },
+        },
+      },
     }
     const createRes = await fetch(`${dockerHost}/containers/create?name=${containerName}`, {
       method: 'POST',
