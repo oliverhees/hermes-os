@@ -5,7 +5,7 @@ import { db } from './db'
 import { user } from './db/schema'
 import { getSystemConfig } from './db/config'
 import { audit } from './db/audit'
-import { count } from 'drizzle-orm'
+import { count, eq } from 'drizzle-orm'
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg' }),
@@ -56,23 +56,19 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        before: async (newUser) => {
-          const [{ value: existingCount }] = await db
-            .select({ value: count() })
-            .from(user)
-          return {
-            data: {
-              ...newUser,
-              role: Number(existingCount) === 0 ? 'admin' : 'user',
-              status: 'active',
-            },
-          }
-        },
         after: async (createdUser, ctx) => {
+          // better-auth strips custom fields from before-hook data, so we UPDATE here.
+          // First user gets admin + active; subsequent users get active only.
+          const [{ value: totalUsers }] = await db.select({ value: count() }).from(user)
+          const isFirstUser = Number(totalUsers) === 1
+          await db
+            .update(user)
+            .set({ role: isFirstUser ? 'admin' : 'user', status: 'active' })
+            .where(eq(user.id, createdUser.id))
           await audit({
             userId: createdUser.id,
             action: 'auth.sign_up',
-            metadata: { role: (createdUser as any).role, email: createdUser.email },
+            metadata: { role: isFirstUser ? 'admin' : 'user', email: createdUser.email },
             req: ctx?.context?.request as any,
           })
         },
