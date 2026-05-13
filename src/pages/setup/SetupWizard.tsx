@@ -8,7 +8,7 @@ import { StepAdmin } from './StepAdmin'
 import { StepTwoFactor } from './StepTwoFactor'
 import { StepVault } from './StepVault'
 import { StepAgent } from './StepAgent'
-import { StepAgentConfig } from './StepAgentConfig'
+import { StepAgentSetup } from './StepAgentSetup'
 import { StepDone } from './StepDone'
 
 export function SetupWizard() {
@@ -68,7 +68,7 @@ export function SetupWizard() {
       content = <StepAgent onNext={() => navigateToStep('agent-config')} />
       break
     case 'agent-config':
-      content = <StepAgentConfig onNext={() => navigateToStep('done')} />
+      content = <StepAgentSetup onNext={() => navigateToStep('done')} />
       break
     case 'done':
       content = <StepDone />
@@ -77,5 +77,5 @@ export function SetupWizard() {
       content = <StepDomain onNext={() => navigateToStep('admin')} />
   }
 
-  return <WizardLayout steps={steps}>{content}</WizardLayout>
+  return <WizardLayout steps={steps} fullWidth={currentStep === 'agent-config'}>{content}</WizardLayout>
 }

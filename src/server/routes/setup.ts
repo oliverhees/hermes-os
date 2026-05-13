@@ -422,7 +422,7 @@ router.post('/agent-wizard', async (req, res) => {
     // DOCKER_HOST auf Unix-Socket setzen: docker exec -it braucht direkte Socket-Verbindung
     // (der socket-proxy unterstützt kein TTY-Hijacking für interaktive Exec-Sessions)
     const session = createTerminalSession({
-      command: ['docker', 'exec', '-it', '-e', 'PATH=/opt/hermes/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin', containerName, 'hermes', 'setup'],
+      command: ['docker', 'exec', '-it', '-e', 'PATH=/opt/hermes/.venv/bin:/opt/data/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin', containerName, 'hermes', 'setup'],
       cols: 120,
       rows: 34,
       cwd: '/tmp',

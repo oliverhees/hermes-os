@@ -43,7 +43,15 @@ const DETACH_TTL_MS = (() => {
   return 5 * 60_000 // 5 minutes
 })()
 
-const sessions = new Map<string, TerminalSession>()
+// Use a globalThis singleton so sessions created by the Express bundle
+// (server-entry.cjs) are visible to the TanStack bundle (dist/server/server.js).
+// Both bundles run in the same Node.js process but inline separate copies of
+// this module, giving each its own Map — unless we share via globalThis.
+const SESSIONS_KEY = Symbol.for('__hermes_terminal_sessions__')
+if (!(globalThis as Record<symbol, unknown>)[SESSIONS_KEY]) {
+  (globalThis as Record<symbol, unknown>)[SESSIONS_KEY] = new Map<string, TerminalSession>()
+}
+const sessions = (globalThis as Record<symbol, unknown>)[SESSIONS_KEY] as Map<string, TerminalSession>
 
 // Resolve path to pty-helper.py relative to this file
 const __dirname_resolved =
