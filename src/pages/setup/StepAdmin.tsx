@@ -1,20 +1,25 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { StepCard } from '@/components/wizard/StepCard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormError } from '@/components/wizard/FormError'
-import { signUp } from '@/lib/auth-client'
+import { signUp, useSession } from '@/lib/auth-client'
 
 interface StepAdminProps {
   onNext: () => void
 }
 
 export function StepAdmin({ onNext }: StepAdminProps) {
+  const { data: session } = useSession()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (session?.user) onNext()
+  }, [session?.user])
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
