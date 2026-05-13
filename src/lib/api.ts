@@ -74,6 +74,8 @@ export const setupApi = {
       method: 'POST',
       body: JSON.stringify({ provider, apiKey, model, baseUrl }),
     }),
+  startAgentWizard: () =>
+    request<{ sessionId: string; containerName: string }>('/api/setup/agent-wizard', { method: 'POST' }),
 }
 
 export type SetupStatus = {

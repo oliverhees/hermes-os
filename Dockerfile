@@ -48,7 +48,7 @@ FROM node:22-slim AS runtime
 # python3 is required by scripts/pty-helper.py (terminal feature).
 # gosu allows dropping from root to workspace after reading secrets.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl tini python3 gosu \
+      ca-certificates curl tini python3 gosu docker.io \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -r workspace && useradd -r -g workspace -u 10010 workspace
 

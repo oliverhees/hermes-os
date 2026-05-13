@@ -4,6 +4,7 @@ import { canFinalizeSetup } from '../middleware/setup-gate'
 import { isValidDomain, verifyDomainDns } from '../services/domain'
 import { provisionForgejo, createStarterVault, vaultExists } from '../services/forgejo-provisioner'
 import { audit } from '../db/audit'
+import { createTerminalSession } from '../terminal-sessions'
 
 const router = Router()
 
@@ -344,6 +345,41 @@ router.post('/configure-agent', async (req, res) => {
     res.json({ ok: true, message: `Agent mit Provider "${provider}" konfiguriert` })
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message ?? 'Unbekannter Fehler' })
+  }
+})
+
+// POST /api/setup/agent-wizard
+// Startet eine TTY-Session mit "hermes setup" im hermes-agent Container.
+// Gibt sessionId zurück; Client verbindet sich dann via /api/terminal-stream (attach).
+router.post('/agent-wizard', async (req, res) => {
+  const dockerHost = process.env.DOCKER_HOST?.replace('tcp://', 'http://') || 'http://socket-proxy:2375'
+
+  try {
+    // Container finden
+    const listRes = await fetch(
+      `${dockerHost}/containers/json?all=0&filters=${encodeURIComponent(JSON.stringify({ name: ['hermes-agent'] }))}`,
+      { signal: AbortSignal.timeout(8000) }
+    )
+    const containers = await listRes.json() as Array<{ Id: string; Names: string[] }>
+    const found = containers.find(c => c.Names.some(n => n.includes('hermes-agent')))
+    if (!found) {
+      return res.status(400).json({ error: 'agent_not_installed' })
+    }
+
+    const containerName = found.Names[0]?.replace(/^\//, '') ?? found.Id.slice(0, 12)
+
+    // DOCKER_HOST auf Unix-Socket setzen: docker exec -it braucht direkte Socket-Verbindung
+    // (der socket-proxy unterstützt kein TTY-Hijacking für interaktive Exec-Sessions)
+    const session = createTerminalSession({
+      command: ['docker', 'exec', '-it', containerName, 'hermes', 'setup'],
+      cols: 120,
+      rows: 34,
+      env: { DOCKER_HOST: 'unix:///var/run/docker.sock' },
+    })
+
+    res.json({ sessionId: session.id, containerName })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message ?? 'Unbekannter Fehler' })
   }
 })
 

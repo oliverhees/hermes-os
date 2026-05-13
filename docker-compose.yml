@@ -145,6 +145,8 @@ services:
       PG_PASSWORD_FILE: /run/secrets/pg_password
       ENCRYPTION_KEY_FILE: /run/secrets/encryption_key
       PGSSLMODE: disable
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     secrets:
       - pg_password
       - encryption_key

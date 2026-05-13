@@ -8,7 +8,7 @@ import { StepAdmin } from './StepAdmin'
 import { StepTwoFactor } from './StepTwoFactor'
 import { StepVault } from './StepVault'
 import { StepAgent } from './StepAgent'
-import { StepAgentConfig } from './StepAgentConfig'
+import { StepAgentSetup } from './StepAgentSetup'
 import { StepDone } from './StepDone'
 
 export function SetupWizard() {
@@ -30,7 +30,7 @@ export function SetupWizard() {
     },
     { id: 'vault', label: 'Forgejo Vault', done: !!status?.vault, current: currentStep === 'vault' },
     { id: 'agent', label: 'Hermes Agent', done: ['agent-config', 'done'].includes(currentStep), current: currentStep === 'agent' },
-    { id: 'agent-config', label: 'KI-Provider', done: currentStep === 'done', current: currentStep === 'agent-config' },
+    { id: 'agent-config', label: 'Agent Setup', done: currentStep === 'done', current: currentStep === 'agent-config' },
     { id: 'done', label: 'Finish', done: !!status?.completed, current: currentStep === 'done' },
   ]
 
@@ -58,7 +58,7 @@ export function SetupWizard() {
       content = <StepAgent onNext={() => navigateToStep('agent-config')} />
       break
     case 'agent-config':
-      content = <StepAgentConfig onNext={() => navigateToStep('done')} />
+      content = <StepAgentSetup onNext={() => navigateToStep('done')} />
       break
     case 'done':
       content = <StepDone />
