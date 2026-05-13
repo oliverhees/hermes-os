@@ -69,6 +69,11 @@ export const setupApi = {
     request<{ running: boolean; status: string }>('/api/setup/agent-status'),
   startAgent: () =>
     request<{ ok: boolean; message: string }>('/api/setup/start-agent', { method: 'POST' }),
+  configureAgent: (provider: string, apiKey?: string, model?: string, baseUrl?: string) =>
+    request<{ ok: boolean; message: string }>('/api/setup/configure-agent', {
+      method: 'POST',
+      body: JSON.stringify({ provider, apiKey, model, baseUrl }),
+    }),
 }
 
 export type SetupStatus = {

@@ -268,4 +268,83 @@ router.post('/start-agent', async (req, res) => {
   }
 })
 
+// POST /api/setup/configure-agent
+// Schreibt .env in hermes-agent Container via Docker exec, startet Agent neu
+router.post('/configure-agent', async (req, res) => {
+  const { provider, apiKey, model, baseUrl } = req.body ?? {}
+  const allowed = ['anthropic', 'openai', 'openrouter', 'google', 'ollama']
+  if (!allowed.includes(provider)) {
+    return res.status(400).json({ error: 'invalid_provider' })
+  }
+  const needsKey = provider !== 'ollama'
+  if (needsKey && (!apiKey || typeof apiKey !== 'string' || apiKey.length < 10)) {
+    return res.status(400).json({ error: 'invalid_api_key' })
+  }
+
+  const dockerHost = process.env.DOCKER_HOST?.replace('tcp://', 'http://') || 'http://socket-proxy:2375'
+
+  try {
+    // Container finden
+    const listRes = await fetch(
+      `${dockerHost}/containers/json?all=1&filters=${encodeURIComponent(JSON.stringify({ name: ['hermes-agent'] }))}`,
+      { signal: AbortSignal.timeout(10000) }
+    )
+    const containers = await listRes.json() as Array<{ Id: string; State: string; Names: string[] }>
+    const existing = containers.find(c => c.Names.some(n => n.includes('hermes-agent')))
+    if (!existing) {
+      return res.status(400).json({ error: 'agent_not_installed' })
+    }
+
+    // .env-Inhalt aufbauen
+    const keyVarMap: Record<string, string> = {
+      anthropic: 'ANTHROPIC_API_KEY',
+      openai: 'OPENAI_API_KEY',
+      openrouter: 'OPENROUTER_API_KEY',
+      google: 'GOOGLE_API_KEY',
+    }
+    const envLines = [`HERMES_INFERENCE_PROVIDER=${provider}`]
+    if (keyVarMap[provider] && apiKey) envLines.push(`${keyVarMap[provider]}=${apiKey}`)
+    if (model) envLines.push(`HERMES_MODEL=${model}`)
+    if (provider === 'ollama' && baseUrl) envLines.push(`OLLAMA_BASE_URL=${baseUrl}`)
+
+    // Base64 encoding für sicheres Schreiben via exec
+    const envContentB64 = Buffer.from(envLines.join('\n')).toString('base64')
+
+    // Exec erstellen: .env schreiben
+    const execCreateRes = await fetch(`${dockerHost}/containers/${existing.Id}/exec`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        Cmd: ['sh', '-c', `echo ${envContentB64} | base64 -d > /opt/data/.env`],
+        AttachStdout: true,
+        AttachStderr: true,
+      }),
+      signal: AbortSignal.timeout(10000),
+    })
+    if (!execCreateRes.ok) {
+      throw new Error(`Exec erstellen fehlgeschlagen: HTTP ${execCreateRes.status}`)
+    }
+    const { Id: execId } = await execCreateRes.json() as { Id: string }
+
+    // Exec ausführen
+    await fetch(`${dockerHost}/exec/${execId}/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ Detach: false }),
+      signal: AbortSignal.timeout(15000),
+    })
+
+    // Container neustarten
+    await fetch(`${dockerHost}/containers/${existing.Id}/restart?t=5`, {
+      method: 'POST',
+      signal: AbortSignal.timeout(30000),
+    })
+
+    await audit({ action: 'setup.agent_configured', target: provider, req })
+    res.json({ ok: true, message: `Agent mit Provider "${provider}" konfiguriert` })
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message ?? 'Unbekannter Fehler' })
+  }
+})
+
 export default router

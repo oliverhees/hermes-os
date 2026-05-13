@@ -65,7 +65,6 @@ export function StepDone() {
     >
       <dl className="space-y-3 text-sm">
         <Row label="Domain" value={status?.domain ?? '—'} />
-        <Row label="Provider" value={(status?.provider as any)?.provider ?? '—'} />
         <Row label="Vault" value={status?.vault ?? '—'} />
       </dl>
 

@@ -6,9 +6,9 @@ import { useSession } from '@/lib/auth-client'
 import { StepDomain } from './StepDomain'
 import { StepAdmin } from './StepAdmin'
 import { StepTwoFactor } from './StepTwoFactor'
-import { StepProvider } from './StepProvider'
 import { StepVault } from './StepVault'
 import { StepAgent } from './StepAgent'
+import { StepAgentConfig } from './StepAgentConfig'
 import { StepDone } from './StepDone'
 
 export function SetupWizard() {
@@ -28,9 +28,9 @@ export function SetupWizard() {
       done: !!(session?.user as any)?.twoFactorEnabled,
       current: currentStep === 'two-factor',
     },
-    { id: 'provider', label: 'LLM Provider', done: !!status?.provider, current: currentStep === 'provider' },
     { id: 'vault', label: 'Forgejo Vault', done: !!status?.vault, current: currentStep === 'vault' },
-    { id: 'agent', label: 'Hermes Agent', done: currentStep === 'done', current: currentStep === 'agent' },
+    { id: 'agent', label: 'Hermes Agent', done: ['agent-config', 'done'].includes(currentStep), current: currentStep === 'agent' },
+    { id: 'agent-config', label: 'KI-Provider', done: currentStep === 'done', current: currentStep === 'agent-config' },
     { id: 'done', label: 'Finish', done: !!status?.completed, current: currentStep === 'done' },
   ]
 
@@ -49,16 +49,16 @@ export function SetupWizard() {
       content = <StepAdmin onNext={() => navigateToStep('two-factor')} />
       break
     case 'two-factor':
-      content = <StepTwoFactor onNext={() => navigateToStep('provider')} />
-      break
-    case 'provider':
-      content = <StepProvider onNext={() => navigateToStep('vault')} />
+      content = <StepTwoFactor onNext={() => navigateToStep('vault')} />
       break
     case 'vault':
       content = <StepVault onNext={() => navigateToStep('agent')} />
       break
     case 'agent':
-      content = <StepAgent onNext={() => navigateToStep('done')} />
+      content = <StepAgent onNext={() => navigateToStep('agent-config')} />
+      break
+    case 'agent-config':
+      content = <StepAgentConfig onNext={() => navigateToStep('done')} />
       break
     case 'done':
       content = <StepDone />

@@ -43,8 +43,5 @@ export async function canFinalizeSetup(): Promise<
   const domain = await getSystemConfig<string>('domain')
   if (!domain) return { ok: false, reason: 'domain_missing' }
 
-  const provider = await getSystemConfig('llm_provider')
-  if (!provider) return { ok: false, reason: 'provider_missing' }
-
   return { ok: true }
 }
