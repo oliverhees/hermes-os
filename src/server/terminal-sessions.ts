@@ -4,6 +4,7 @@
  */
 import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { homedir } from 'node:os'
@@ -53,12 +54,20 @@ if (!(globalThis as Record<symbol, unknown>)[SESSIONS_KEY]) {
 }
 const sessions = (globalThis as Record<symbol, unknown>)[SESSIONS_KEY] as Map<string, TerminalSession>
 
-// Resolve path to pty-helper.py relative to this file
+// Resolve path to pty-helper.py — search multiple candidates because the compiled
+// server-entry.cjs has __dirname='/app' while the source file lives at src/server/
 const __dirname_resolved =
   typeof __dirname !== 'undefined'
     ? __dirname
     : dirname(fileURLToPath(import.meta.url))
-const PTY_HELPER = resolve(__dirname_resolved, 'pty-helper.py')
+const PTY_HELPER = (() => {
+  const candidates = [
+    resolve(__dirname_resolved, 'pty-helper.py'),
+    resolve(__dirname_resolved, 'src', 'server', 'pty-helper.py'),
+    resolve(process.cwd(), 'src', 'server', 'pty-helper.py'),
+  ]
+  return candidates.find(p => existsSync(p)) ?? candidates[0]
+})()
 
 export function createTerminalSession(params: {
   command?: Array<string>
