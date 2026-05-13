@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { useLocation, useNavigate } from '@tanstack/react-router'
 import { WizardLayout, type WizardStep } from '@/components/wizard/WizardLayout'
 import { useSetupStatus } from '@/lib/setup-status'
@@ -15,9 +15,19 @@ export function SetupWizard() {
   const location = useLocation()
   const navigate = useNavigate()
   const { status, refresh } = useSetupStatus()
-  const { data: session } = useSession()
+  const { data: session, isPending: sessionPending } = useSession()
 
   const currentStep = ((location.search as Record<string, string>).step) || 'domain'
+
+  // Auto-jump to first incomplete step when landing without a specific step
+  useEffect(() => {
+    if (sessionPending || !status || currentStep !== 'domain') return
+    if (!status.domain) return
+    if (!session?.user) { navigate({ to: '/setup', search: { step: 'admin' } as any }); return }
+    if (!(session.user as any).twoFactorEnabled) { navigate({ to: '/setup', search: { step: 'two-factor' } as any }); return }
+    if (!status.vault) { navigate({ to: '/setup', search: { step: 'vault' } as any }); return }
+    navigate({ to: '/setup', search: { step: 'agent' } as any })
+  }, [sessionPending, status?.domain, status?.vault, session?.user])
 
   const steps: WizardStep[] = [
     { id: 'domain', label: 'Domain', done: !!status?.domain, current: currentStep === 'domain' },
