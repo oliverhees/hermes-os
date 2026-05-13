@@ -188,6 +188,50 @@ router.get('/agent-status', async (req, res) => {
   }
 })
 
+// GET /api/setup/agent-containers
+// Listet alle hermes-agent Container (laufend + gestoppt)
+router.get('/agent-containers', async (_req, res) => {
+  const dockerHost = process.env.DOCKER_HOST?.replace('tcp://', 'http://') || 'http://socket-proxy:2375'
+  try {
+    const r = await fetch(
+      `${dockerHost}/containers/json?all=1&filters=${encodeURIComponent(JSON.stringify({ name: ['hermes-agent'] }))}`,
+      { signal: AbortSignal.timeout(8000) }
+    )
+    const raw = await r.json() as Array<{ Id: string; Names: string[]; State: string; Status: string; Image: string; Created: number }>
+    const containers = raw
+      .filter(c => c.Names.some(n => n.includes('hermes-agent')))
+      .map(c => ({
+        id: c.Id.slice(0, 12),
+        name: c.Names[0]?.replace(/^\//, '') ?? c.Id.slice(0, 12),
+        state: c.State,
+        status: c.Status,
+        image: c.Image,
+        created: c.Created,
+      }))
+    res.json({ containers })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// DELETE /api/setup/agent-container
+// Stoppt und entfernt einen hermes-agent Container
+router.delete('/agent-container', async (req, res) => {
+  const { id } = req.body ?? {}
+  if (!id || typeof id !== 'string') {
+    return res.status(400).json({ error: 'missing_id' })
+  }
+  const dockerHost = process.env.DOCKER_HOST?.replace('tcp://', 'http://') || 'http://socket-proxy:2375'
+  try {
+    await fetch(`${dockerHost}/containers/${id}/stop?t=5`, { method: 'POST', signal: AbortSignal.timeout(15000) })
+    const r = await fetch(`${dockerHost}/containers/${id}?force=1`, { method: 'DELETE', signal: AbortSignal.timeout(15000) })
+    if (!r.ok && r.status !== 404) throw new Error(`HTTP ${r.status}`)
+    res.json({ ok: true })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // POST /api/setup/start-agent
 // Versucht den hermes-agent Container via Docker-API zu starten
 router.post('/start-agent', async (req, res) => {

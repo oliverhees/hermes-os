@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { StepCard } from '@/components/wizard/StepCard'
 import { Button } from '@/components/ui/button'
-import { setupApi } from '@/lib/api'
+import { setupApi, type AgentContainer } from '@/lib/api'
 
 interface StepAgentProps {
   onNext: () => void
@@ -32,6 +32,8 @@ export function StepAgent({ onNext }: StepAgentProps) {
   const [phase, setPhase] = useState<Phase>('checking')
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [containers, setContainers] = useState<AgentContainer[]>([])
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const deadlineRef = useRef<number>(0)
   const logRef = useRef<HTMLDivElement>(null)
@@ -89,10 +91,31 @@ export function StepAgent({ onNext }: StepAgentProps) {
     }
   }, [addLog])
 
+  const refreshContainers = useCallback(async () => {
+    try {
+      const { containers } = await setupApi.agentContainers()
+      setContainers(containers)
+    } catch { /* ignore */ }
+  }, [])
+
   useEffect(() => {
     checkOnce()
+    refreshContainers()
     return stopPolling
-  }, [checkOnce, stopPolling])
+  }, [checkOnce, stopPolling, refreshContainers])
+
+  async function deleteContainer(id: string) {
+    setDeletingId(id)
+    try {
+      await setupApi.deleteAgentContainer(id)
+      await refreshContainers()
+      await checkOnce()
+    } catch (err: any) {
+      addLog(`Container löschen fehlgeschlagen: ${err.message}`, 'error')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   async function install() {
     setPhase('installing')
@@ -128,6 +151,31 @@ export function StepAgent({ onNext }: StepAgentProps) {
     warn: 'text-yellow-400',
   }
 
+  const ContainerPanel = containers.length > 0 && (
+    <div className="mt-4 rounded-lg border border-zinc-800 overflow-hidden">
+      <div className="px-3 py-2 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between">
+        <span className="text-xs font-medium text-zinc-400">Hermes Agent Container</span>
+        <button onClick={refreshContainers} className="text-xs text-zinc-600 hover:text-zinc-400">↻ Aktualisieren</button>
+      </div>
+      {containers.map(c => (
+        <div key={c.id} className="px-3 py-2.5 bg-zinc-950 flex items-center gap-3 border-b border-zinc-900 last:border-0">
+          <span className={`h-2 w-2 rounded-full shrink-0 ${c.state === 'running' ? 'bg-green-500' : 'bg-zinc-600'}`} />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-zinc-200 font-mono truncate">{c.name}</p>
+            <p className="text-xs text-zinc-600">{c.status} · {c.image}</p>
+          </div>
+          <button
+            onClick={() => deleteContainer(c.id)}
+            disabled={deletingId === c.id}
+            className="text-xs text-red-500 hover:text-red-400 disabled:text-zinc-700 shrink-0"
+          >
+            {deletingId === c.id ? '…' : 'Löschen'}
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+
   const LogPanel = logs.length > 0 && (
     <div
       ref={logRef}
@@ -162,6 +210,7 @@ export function StepAgent({ onNext }: StepAgentProps) {
             <span>Hermes Agent verbunden</span>
           </div>
           {LogPanel}
+          {ContainerPanel}
           <div className="flex justify-end pt-2">
             <Button onClick={onNext}>Weiter →</Button>
           </div>
@@ -183,6 +232,7 @@ export function StepAgent({ onNext }: StepAgentProps) {
               Image: <code className="bg-zinc-800 px-1 rounded">nousresearch/hermes-agent:latest</code>
             </p>
           </div>
+          {ContainerPanel}
           <div className="flex items-center gap-3">
             <Button onClick={install}>Agent installieren</Button>
             <button onClick={onNext} className="text-sm text-zinc-500 hover:text-zinc-300 underline">
@@ -224,6 +274,7 @@ export function StepAgent({ onNext }: StepAgentProps) {
           </div>
         )}
         {LogPanel}
+        {ContainerPanel}
         <div className="flex items-center gap-3 pt-2">
           <Button onClick={retry}>Erneut prüfen</Button>
           <Button variant="outline" onClick={install}>Erneut installieren</Button>

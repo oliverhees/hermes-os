@@ -76,6 +76,22 @@ export const setupApi = {
     }),
   startAgentWizard: () =>
     request<{ sessionId: string; containerName: string }>('/api/setup/agent-wizard', { method: 'POST' }),
+  agentContainers: () =>
+    request<{ containers: AgentContainer[] }>('/api/setup/agent-containers'),
+  deleteAgentContainer: (id: string) =>
+    request<{ ok: boolean }>('/api/setup/agent-container', {
+      method: 'DELETE',
+      body: JSON.stringify({ id }),
+    }),
+}
+
+export type AgentContainer = {
+  id: string
+  name: string
+  state: string
+  status: string
+  image: string
+  created: number
 }
 
 export type SetupStatus = {
