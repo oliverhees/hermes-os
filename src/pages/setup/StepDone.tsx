@@ -33,10 +33,11 @@ export function StepDone() {
 
   useEffect(() => {
     if (status?.completed) {
-      const t = setTimeout(() => navigate({ to: '/' }), 2000)
+      // Hard reload so AppGate picks up fresh setup status instead of stale cached state
+      const t = setTimeout(() => window.location.replace('/'), 2000)
       return () => clearTimeout(t)
     }
-  }, [status?.completed, navigate])
+  }, [status?.completed])
 
   if (status?.completed) {
     return (
