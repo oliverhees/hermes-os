@@ -3,7 +3,6 @@ import 'xterm/css/xterm.css'
 import { useEffect, useRef, useState } from 'react'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
-import { StepCard } from '@/components/wizard/StepCard'
 import { Button } from '@/components/ui/button'
 import { FormError } from '@/components/wizard/FormError'
 import { setupApi } from '@/lib/api'
@@ -23,7 +22,6 @@ export function StepAgentSetup({ onNext }: StepAgentSetupProps) {
   const fitAddon = useRef<FitAddon | null>(null)
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null)
 
-  // Step 1: Start wizard session on server
   useEffect(() => {
     setupApi.startAgentWizard()
       .then(({ sessionId }) => setSessionId(sessionId))
@@ -33,22 +31,21 @@ export function StepAgentSetup({ onNext }: StepAgentSetupProps) {
       })
   }, [])
 
-  // Step 2: Init xterm + connect SSE once we have sessionId
   useEffect(() => {
     if (!sessionId || !termRef.current) return
 
     const term = new Terminal({
       fontFamily: '"Menlo", "Monaco", "Courier New", monospace',
-      fontSize: 13,
+      fontSize: 14,
       theme: {
-        background: '#0f0f14',
+        background: '#0a0a0f',
         foreground: '#e2e2e9',
         cursor: '#7c7cdb',
         selectionBackground: '#3d3d5c',
       },
       cursorBlink: true,
       convertEol: true,
-      scrollback: 1000,
+      scrollback: 2000,
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
@@ -59,7 +56,6 @@ export function StepAgentSetup({ onNext }: StepAgentSetupProps) {
 
     setPhase('running')
 
-    // Resize observer
     const observer = new ResizeObserver(() => {
       fit.fit()
       const dims = fit.proposeDimensions()
@@ -73,7 +69,6 @@ export function StepAgentSetup({ onNext }: StepAgentSetupProps) {
     })
     observer.observe(termRef.current)
 
-    // Keyboard input
     const inputDispose = term.onData(data => {
       fetch('/api/terminal-input', {
         method: 'POST',
@@ -83,7 +78,6 @@ export function StepAgentSetup({ onNext }: StepAgentSetupProps) {
       }).catch(() => undefined)
     })
 
-    // SSE stream (attach to existing session)
     let aborted = false
     const controller = new AbortController()
 
@@ -92,7 +86,7 @@ export function StepAgentSetup({ onNext }: StepAgentSetupProps) {
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       signal: controller.signal,
-      body: JSON.stringify({ sessionId, cols: 120, rows: 34 }),
+      body: JSON.stringify({ sessionId, cols: 180, rows: 48 }),
     }).then(async res => {
       if (!res.ok || !res.body) {
         setError('Stream konnte nicht gestartet werden')
@@ -117,14 +111,10 @@ export function StepAgentSetup({ onNext }: StepAgentSetupProps) {
           if (line.startsWith('data: ')) {
             try {
               const payload = JSON.parse(line.slice(6))
-              if (payload?.data !== undefined) {
-                term.write(payload.data)
-              }
-            } catch { /* ignore parse errors */ }
-          } else if (line.startsWith('event: exit')) {
+              if (payload?.data !== undefined) term.write(payload.data)
+            } catch { /* ignore */ }
+          } else if (line.startsWith('event: exit') || line.startsWith('event: error')) {
             setPhase('done')
-          } else if (line.startsWith('event: error')) {
-            setPhase('done') // treat as done so user can proceed
           }
         }
       }
@@ -151,66 +141,58 @@ export function StepAgentSetup({ onNext }: StepAgentSetupProps) {
     }
   }, [sessionId])
 
-  const footer = phase === 'done' ? (
-    <div className="flex justify-end">
-      <Button onClick={onNext}>Weiter →</Button>
-    </div>
-  ) : phase === 'error' ? (
-    <div className="flex justify-between items-center">
-      <button
-        type="button"
-        onClick={onNext}
-        className="text-sm text-primary-500 hover:text-primary-700 dark:hover:text-zinc-300 underline"
-      >
-        Überspringen
-      </button>
-    </div>
-  ) : (
-    <div className="flex justify-between items-center text-sm text-primary-500">
-      <span>Führe den Wizard durch und beende ihn mit „Done".</span>
-      <button
-        type="button"
-        onClick={onNext}
-        className="text-sm text-primary-500 hover:text-primary-700 dark:hover:text-zinc-300 underline"
-      >
-        Überspringen
-      </button>
-    </div>
-  )
-
   return (
-    <StepCard
-      title="Hermes Agent einrichten"
-      description={
-        phase === 'starting' ? 'Wizard wird gestartet…'
-        : phase === 'done' ? 'Setup abgeschlossen.'
-        : 'Richte den Agent in diesem Terminal ein.'
-      }
-      footer={footer}
-    >
-      {phase === 'starting' && (
-        <div className="flex items-center gap-3 py-8">
-          <div className="animate-spin h-5 w-5 border-2 border-accent-500 border-t-transparent rounded-full" />
-          <span className="text-sm text-primary-700 dark:text-zinc-300">Verbinde mit Agent…</span>
+    <div className="flex flex-col flex-1 h-full gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between shrink-0">
+        <div>
+          <h2 className="text-xl font-semibold text-primary-900 dark:text-white">Hermes Agent einrichten</h2>
+          <p className="text-sm text-primary-500 dark:text-zinc-400 mt-0.5">
+            {phase === 'starting' && 'Verbinde mit Agent…'}
+            {phase === 'running' && 'Führe den Wizard durch und beende ihn mit „Done".'}
+            {phase === 'done' && 'Setup abgeschlossen.'}
+            {phase === 'error' && 'Fehler beim Starten des Wizards.'}
+          </p>
         </div>
-      )}
+        <div className="flex items-center gap-3">
+          {phase === 'done' && (
+            <span className="text-sm text-green-500 font-medium">✓ Abgeschlossen</span>
+          )}
+          {phase === 'done' ? (
+            <Button onClick={onNext}>Weiter →</Button>
+          ) : (
+            <button
+              type="button"
+              onClick={onNext}
+              className="text-sm text-primary-400 hover:text-primary-600 dark:hover:text-zinc-300 underline"
+            >
+              Überspringen
+            </button>
+          )}
+        </div>
+      </div>
 
+      {/* Error state */}
       {phase === 'error' && !sessionId && (
         <FormError message={error} />
       )}
 
+      {/* Terminal */}
       <div
-        ref={termRef}
-        style={{ display: sessionId ? 'block' : 'none', height: '420px' }}
-        className="rounded-lg overflow-hidden bg-[#0f0f14]"
-      />
-
-      {phase === 'done' && (
-        <div className="flex items-center gap-2 mt-4 text-sm text-green-600 dark:text-green-400 font-medium">
-          <span>✓</span>
-          <span>Hermes Agent wurde eingerichtet.</span>
-        </div>
-      )}
-    </StepCard>
+        className="rounded-xl overflow-hidden bg-[#0a0a0f] border border-zinc-800 flex-1"
+        style={{ minHeight: 0 }}
+      >
+        {phase === 'starting' && (
+          <div className="flex items-center gap-3 p-8">
+            <div className="animate-spin h-5 w-5 border-2 border-accent-500 border-t-transparent rounded-full" />
+            <span className="text-sm text-zinc-400">Verbinde mit Agent…</span>
+          </div>
+        )}
+        <div
+          ref={termRef}
+          style={{ display: sessionId ? 'block' : 'none', height: '100%', width: '100%' }}
+        />
+      </div>
+    </div>
   )
 }

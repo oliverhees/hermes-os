@@ -77,5 +77,5 @@ export function SetupWizard() {
       content = <StepDomain onNext={() => navigateToStep('admin')} />
   }
 
-  return <WizardLayout steps={steps}>{content}</WizardLayout>
+  return <WizardLayout steps={steps} fullWidth={currentStep === 'agent-config'}>{content}</WizardLayout>
 }
