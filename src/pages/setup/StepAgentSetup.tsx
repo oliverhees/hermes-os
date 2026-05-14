@@ -113,8 +113,12 @@ export function StepAgentSetup({ onNext }: StepAgentSetupProps) {
               const payload = JSON.parse(line.slice(6))
               if (payload?.data !== undefined) term.write(payload.data)
             } catch { /* ignore */ }
-          } else if (line.startsWith('event: exit') || line.startsWith('event: error')) {
+          } else if (line.startsWith('event: exit')) {
             setPhase('done')
+            // Auto-advance after short delay so user sees final output
+            setTimeout(() => onNext(), 1500)
+          } else if (line.startsWith('event: error')) {
+            setPhase('error')
           }
         }
       }

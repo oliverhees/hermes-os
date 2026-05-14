@@ -31,6 +31,13 @@ export function StepDone() {
     }
   }
 
+  // Auto-finalize when this step is first rendered
+  useEffect(() => {
+    if (!status?.completed && status?.canFinalize) {
+      finalize()
+    }
+  }, [])
+
   useEffect(() => {
     if (status?.completed) {
       // Hard reload so AppGate picks up fresh setup status instead of stale cached state
